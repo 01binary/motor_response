@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>motor_response</name>
+  <version>1.0.0</version>
+  <description>Recording DC motor response for PID tuning</description>
+  <maintainer email="valeriy.novytskyy@outlook.com">Valeriy Novytskyy</maintainer>
+  <license>GNU GPLv3</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+  <depend>roscpp</depend>
+  <build_depend>actionlib</build_depend>
+  <build_depend>str1ker</build_depend>
+  <exec_depend>actionlib</exec_depend>
+</package>
