@@ -1,0 +1,52 @@
+{
+  "configurations": [
+    {
+      "browse": {
+        "databaseFilename": "${default}",
+        "limitSymbolsToIncludedHeaders": false
+      },
+      "includePath": [
+        "/home/val/catkin_ws/devel/include/**",
+        "/opt/ros/noetic/include/**",
+        "/home/val/catkin_ws/src/ros_controllers/ackermann_steering_controller/include/**",
+        "/home/val/catkin_ws/src/moveit/moveit_planners/chomp/chomp_motion_planner/include/**",
+        "/home/val/catkin_ws/src/ros_controllers/diff_drive_controller/include/**",
+        "/home/val/catkin_ws/src/ros_controllers/effort_controllers/include/**",
+        "/home/val/catkin_ws/src/ros_controllers/force_torque_sensor_controller/include/**",
+        "/home/val/catkin_ws/src/ros_controllers/forward_command_controller/include/**",
+        "/home/val/catkin_ws/src/ros_controllers/four_wheel_steering_controller/include/**",
+        "/home/val/catkin_ws/src/geometric_shapes/include/**",
+        "/home/val/catkin_ws/src/ros_controllers/gripper_action_controller/include/**",
+        "/home/val/catkin_ws/src/ros_controllers/imu_sensor_controller/include/**",
+        "/home/val/catkin_ws/src/ros_controllers/joint_state_controller/include/**",
+        "/home/val/catkin_ws/src/ros_controllers/joint_trajectory_controller/include/**",
+        "/home/val/catkin_ws/src/moveit/moveit_planners/chomp/chomp_interface/include/**",
+        "/home/val/catkin_ws/src/moveit_resources/prbt_ikfast_manipulator_plugin/include/**",
+        "/home/val/catkin_ws/src/moveit/moveit_ros/benchmarks/include/**",
+        "/home/val/catkin_ws/src/moveit/moveit_plugins/moveit_ros_control_interface/include/**",
+        "/home/val/catkin_ws/src/moveit/moveit_ros/move_group/include/**",
+        "/home/val/catkin_ws/src/moveit/moveit_ros/occupancy_map_monitor/include/**",
+        "/home/val/catkin_ws/src/moveit/moveit_ros/robot_interaction/include/**",
+        "/home/val/catkin_ws/src/moveit/moveit_ros/moveit_servo/include/**",
+        "/home/val/catkin_ws/src/moveit/moveit_setup_assistant/include/**",
+        "/home/val/catkin_ws/src/moveit/moveit_plugins/moveit_simple_controller_manager/include/**",
+        "/home/val/catkin_ws/src/moveit_visual_tools/include/**",
+        "/home/val/catkin_ws/src/moveit/moveit_planners/pilz_industrial_motion_planner/include/**",
+        "/home/val/catkin_ws/src/moveit/moveit_planners/pilz_industrial_motion_planner_testutils/include/**",
+        "/home/val/catkin_ws/src/ros_controllers/position_controllers/include/**",
+        "/home/val/catkin_ws/src/roboticsgroup_gazebo_plugins/include/**",
+        "/home/val/catkin_ws/src/rviz_visual_tools/include/**",
+        "/home/val/catkin_ws/src/moveit/moveit_planners/sbpl/core/sbpl_interface/include/**",
+        "/home/val/catkin_ws/src/srdfdom/include/**",
+        "/home/val/catkin_ws/src/ros_controllers/velocity_controllers/include/**",
+        "/usr/include/**"
+      ],
+      "name": "ROS",
+      "intelliSenseMode": "gcc-x64",
+      "compilerPath": "/usr/bin/gcc",
+      "cStandard": "gnu11",
+      "cppStandard": "c++14"
+    }
+  ],
+  "version": 4
+}
