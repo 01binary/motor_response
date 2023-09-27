@@ -171,3 +171,50 @@ template<class T> T map(T value, T min, T max, T targetMin, T targetMax)
 {
   return (value - min) / (max - min) * (targetMax - targetMin) + targetMin;
 }
+
+std::vector<double> butterworthFilter(
+  std::vector<int> input, int order, std::vector<double> a, std::vector<double> b)
+{
+  size_t samples = input.size();
+  std::vector<double> output(samples);
+
+  output[0] = b[0] * input[0];
+
+  for (int n = 1; n <= order; n++)
+  {
+    double sum = 0.0;
+
+    // Accumulate filter tap samples from input
+    for (int j = 0; j < n + 1; j++)
+    {
+      sum += b[j] * input[n - j];
+    }
+
+    // Accumulate filter tap samples from output
+    for (int j = 0; j < n; j++)
+    {
+      sum -= a[j + 1] * output[n - j - 1];
+    }
+
+    output[n] = sum;
+  }
+
+  for (int n = order + 1; n <= samples; n++)
+  {
+    double sum = 0.0;
+
+    for (int j = 0; j <= order; j++)
+    {
+      sum += b[j] * input[n - j];
+    }
+
+    for (int j = 0; j < order; j++)
+    {
+      sum -= a[j + 1] * output[n - j - 1];
+    }
+
+    output[n] = sum;
+  }
+
+  return output;
+}
