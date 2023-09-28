@@ -58,8 +58,6 @@ int readingIndex = 0;
 double pos = 0.0;
 
 // ROS interface
-
-ros::NodeHandle node;
 ros::Subscriber sub;
 ros::Publisher pub;
 
@@ -79,6 +77,7 @@ template<class T> T clamp(T value, T min, T max);
 int main(int argc, char** argv)
 {
     ros::init(argc, argv, "motor_response");
+    ros::NodeHandle node;
 
     // Configure node
     ros::param::get("rate", spinRate);

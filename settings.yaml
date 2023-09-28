@@ -1,4 +1,4 @@
-rate: 4
+rate: 40
 # output
 outputTopic: /robot/pwm
 lpwm: 10

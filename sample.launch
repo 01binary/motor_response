@@ -2,6 +2,15 @@
   <!-- Configuration -->
   <rosparam file="$(find motor_response)/settings.yaml" />
 
+  <!-- Tool -->
+  <node
+    name="motor_response"
+    pkg="motor_response"
+    type="motor_response"
+    required="true"
+    output="screen"
+  />
+
   <!-- Analog/Digital I/O -->
   <!--<node
     name="analog"
