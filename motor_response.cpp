@@ -68,8 +68,9 @@ ros::Publisher pub;
 \*----------------------------------------------------------*/
 
 void feedback(const str1ker::Adc::ConstPtr& msg);
-template<class T> T clamp(T value, T min, T max);
+double butterworth(const int* input, int count, int order, std::vector<double> a, std::vector<double> b);
 template<class T> T map(T value, T min, T max, T targetMin, T targetMax);
+template<class T> T clamp(T value, T min, T max);
 
 /*----------------------------------------------------------*\
 | Package entry point
