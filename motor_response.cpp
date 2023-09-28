@@ -17,13 +17,19 @@
 #include <str1ker/Pwm.h>
 
 /*----------------------------------------------------------*\
+| Definitions
+\*----------------------------------------------------------*/
+
+#define MAX_READINGS   64
+
+/*----------------------------------------------------------*\
 | Constants
 \*----------------------------------------------------------*/
 
 const int QUEUE_SIZE = 16;
 
 const int PWM_MIN = 0;
-const int PWM_MAX = 1024;
+const int PWM_MAX = 255;
 
 const int ANALOG_MIN = 0;
 const int ANALOG_MAX = 1024;
@@ -44,10 +50,12 @@ int minPwm = PWM_MIN, maxPwm = PWM_MAX;
 double minVelocity = 0.0, maxVelocity = 1.0;
 int minReading = ANALOG_MIN, maxReading = ANALOG_MAX;
 double minPos = 0.0, maxPos = 1.0;
+int readings[MAX_READINGS] = {0};
+int readingIndex = 0;
 
 // State
 
-double pos;
+double pos = 0.0;
 
 // ROS interface
 
@@ -105,7 +113,7 @@ int main(int argc, char** argv)
 
     while(node.ok())
     {
-        // TODO: command something
+        ROS_INFO("position %g", pos);
 
         ros::spinOnce();
         rate.sleep();
@@ -149,11 +157,26 @@ void command(double velocity)
 
 void feedback(const str1ker::Adc::ConstPtr& msg)
 {
+  // Read analog input
   int reading = msg->adc[input];
 
-  // TODO low pass filter?
+  // Accumulate readings
+  readings[readingIndex++] = reading;
 
-  pos = map((double)reading, (double)minReading, (double)maxReading, minPos, maxPos);
+  if (readingIndex == MAX_READINGS)
+  {
+    readingIndex = 0;
+
+    double averageReading = butterworth(
+      readings,
+      MAX_READINGS,
+      2,
+      {1.0, -1.561018075800718, 0.641351538057563},
+      {0.000000000931327, 0.000000001862654, 0.000000000931327}
+    );
+
+    pos = map(averageReading, (double)minReading, (double)maxReading, minPos, maxPos);
+  }
 }
 
 /*----------------------------------------------------------*\
@@ -164,6 +187,7 @@ template<class T> T clamp(T value, T min, T max)
 {
   if (value < min) return min;
   if (value > max) return max;
+
   return value;
 }
 
@@ -172,12 +196,9 @@ template<class T> T map(T value, T min, T max, T targetMin, T targetMax)
   return (value - min) / (max - min) * (targetMax - targetMin) + targetMin;
 }
 
-std::vector<double> butterworthFilter(
-  std::vector<int> input, int order, std::vector<double> a, std::vector<double> b)
+double butterworth(const int* input, int count, int order, std::vector<double> a, std::vector<double> b)
 {
-  size_t samples = input.size();
-  std::vector<double> output(samples);
-
+  std::vector<double> output(count);
   output[0] = b[0] * input[0];
 
   for (int n = 1; n <= order; n++)
@@ -199,7 +220,7 @@ std::vector<double> butterworthFilter(
     output[n] = sum;
   }
 
-  for (int n = order + 1; n <= samples; n++)
+  for (int n = order + 1; n <= count; n++)
   {
     double sum = 0.0;
 
@@ -216,5 +237,12 @@ std::vector<double> butterworthFilter(
     output[n] = sum;
   }
 
-  return output;
+  int sum = 0;
+
+  for (int n = 0; n < count; n++)
+  {
+    sum += output[n];
+  }
+
+  return (double)sum / (double)count;
 }

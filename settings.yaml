@@ -1,0 +1,16 @@
+rate: 4
+# output
+outputTopic: /robot/pwm
+lpwm: 10
+rpwm: 11
+minPwm: 0
+maxPwm: 255
+minVelocity: 0
+maxVelocity: 1
+# input
+inputTopic: /robot/adc
+input: 9
+minReading: 0
+maxReading: 1023
+minPos: 0
+maxPos: 1
