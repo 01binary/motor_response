@@ -171,8 +171,9 @@ void feedback(const str1ker::Adc::ConstPtr& msg)
       readings,
       MAX_READINGS,
       2,
-      {1.0, -1.561018075800718, 0.641351538057563},
-      {0.000000000931327, 0.000000001862654, 0.000000000931327}
+      // constants for 2nd order filter at 0.5
+      {0.2929, 0.5858, 0.2929},
+      {1.0000, 0.0000, 0.1716}
     );
 
     pos = map(averageReading, (double)minReading, (double)maxReading, minPos, maxPos);
