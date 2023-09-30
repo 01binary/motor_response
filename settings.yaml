@@ -1,12 +1,12 @@
 rate: 40
 # output
 outputTopic: /robot/pwm
-lpwm: 10
-rpwm: 11
+lpwm: 0
+rpwm: 1
 minPwm: 0
 maxPwm: 255
-minVelocity: 0
-maxVelocity: 1
+minVelocity: 0.0
+maxVelocity: 1.0
 # input
 inputTopic: /robot/adc
 input: 0
@@ -16,3 +16,14 @@ minPos: 0
 maxPos: 1
 threshold: 8
 average: 16
+log: ~/catkin_ws/response.csv
+steps:
+  step1:
+    velocity: 1.0
+    duration: 1.0
+  step2:
+    velocity: -1.0
+    duration: 1.0
+  step3:
+    velocity: 0.0
+    duration: 2.0

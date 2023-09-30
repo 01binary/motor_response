@@ -12,11 +12,30 @@
 | Includes
 \*----------------------------------------------------------*/
 
+#include <map>
 #include <memory>
+#include <limits>
+#include <string>
+#include <vector>
+#include <iostream>
+#include <fstream>
+
 #include <ros/ros.h>
+
 #include <str1ker/Adc.h>
 #include <str1ker/Pwm.h>
+
 #include "histogramFilter.h"
+
+/*----------------------------------------------------------*\
+| Types
+\*----------------------------------------------------------*/
+
+struct step
+{
+  double velocity;
+  double duration;
+};
 
 /*----------------------------------------------------------*\
 | Constants
@@ -35,10 +54,9 @@ const int ANALOG_MAX = 1024;
 \*----------------------------------------------------------*/
 
 // Configuration
-
 std::string inputTopic;
 std::string outputTopic;
-
+std::string outputLog;
 int spinRate;
 int input;
 int lpwm;
@@ -50,10 +68,13 @@ double minPos = 0.0, maxPos = 1.0;
 int filterThreshold;
 int filterAverage;
 std::unique_ptr<histogramFilter> pFilter;
+std::vector<step> steps;
 
 // State
-
-double pos = 0.0;
+std::ofstream logFile;
+double position = 0.0;
+size_t currentStep = 0;
+bool running = false;
 
 // ROS interface
 ros::Subscriber sub;
@@ -63,6 +84,9 @@ ros::Publisher pub;
 | Declarations
 \*----------------------------------------------------------*/
 
+void configure();
+void initialize(ros::NodeHandle node);
+void command(double velocity);
 void feedback(const str1ker::Adc::ConstPtr& msg);
 template<class T> T map(T value, T min, T max, T targetMin, T targetMax);
 template<class T> T clamp(T value, T min, T max);
@@ -73,56 +97,131 @@ template<class T> T clamp(T value, T min, T max);
 
 int main(int argc, char** argv)
 {
-    ros::init(argc, argv, "motor_response");
-    ros::NodeHandle node;
+  ros::init(argc, argv, "motor_response");
+  ros::NodeHandle node;
 
-    // Configure node
-    ros::param::get("rate", spinRate);
-    ros::param::get("inputTopic", inputTopic);
-    ros::param::get("outputTopic", outputTopic);
-    ros::param::get("input", input);
-    ros::param::get("lpwm", lpwm);
-    ros::param::get("rpwm", rpwm);
-    ros::param::get("minPwm", minPwm);
-    ros::param::get("maxPwm", maxPwm);
-    ros::param::get("minVelocity", minVelocity);
-    ros::param::get("maxVelocity", maxVelocity);
-    ros::param::get("minReading", minReading);
-    ros::param::get("maxReading", maxReading);
-    ros::param::get("minPos", minPos);
-    ros::param::get("maxPos", maxPos);
-    ros::param::get("threshold", filterThreshold);
-    ros::param::get("average", filterAverage);
+  // Configure node
+  configure();
 
-    // Initialize analog subscriber
-    sub = node.subscribe<str1ker::Adc>(
-      inputTopic,
-      QUEUE_SIZE,
-      &feedback
-    );
+  // Initialize node
+  initialize(node);
 
-    // Initialize analog publisher
-    pub = node.advertise<str1ker::Pwm>(
-      outputTopic,
-      QUEUE_SIZE
-    );
+  // Run node
+  ros::Rate rate(spinRate);
+  ros::Time logStart = ros::Time::now();
+  ros::Time start = ros::Time::now();
 
-    // Initialize input filter
-    pFilter = std::unique_ptr<histogramFilter>(
-      new histogramFilter(filterThreshold, filterAverage));
-
-    // Run node
-    ros::Rate rate(spinRate);
-
-    while(node.ok())
+  while(node.ok())
+  {
+    if (running)
     {
-        ROS_INFO("position %.2g", pos);
+      ros::Time time = ros::Time::now();
+      ros::Duration duration = time - start;
 
-        ros::spinOnce();
-        rate.sleep();
+      if (duration.toSec() >= steps[currentStep].duration)
+      {
+        currentStep++;
+        start = time;
+
+        if (currentStep >= steps.size())
+        {
+          break;
+        }
+
+        // Execute command
+        command(steps[currentStep].velocity);
+      }
+
+      // Log command and position
+      logFile << (time - logStart).toSec() << ", "
+              << steps[currentStep].velocity << ", "
+              << position << std::endl;
+
+      ROS_INFO(
+        "step %d\tvelocity %g\tposition %g",
+        int(currentStep + 1), steps[currentStep].velocity, position
+      );
+    }
+    else
+    {
+      ROS_INFO("position %g", position);
     }
 
-    return 0;
+    ros::spinOnce();
+    rate.sleep();
+  }
+
+  logFile.close();
+
+  return 0;
+}
+
+/*----------------------------------------------------------*\
+| Configuration
+\*----------------------------------------------------------*/
+
+void configure()
+{
+  ros::param::get("rate", spinRate);
+  ros::param::get("inputTopic", inputTopic);
+  ros::param::get("outputTopic", outputTopic);
+  ros::param::get("input", input);
+  ros::param::get("lpwm", lpwm);
+  ros::param::get("rpwm", rpwm);
+  ros::param::get("minPwm", minPwm);
+  ros::param::get("maxPwm", maxPwm);
+  ros::param::get("minVelocity", minVelocity);
+  ros::param::get("maxVelocity", maxVelocity);
+  ros::param::get("minReading", minReading);
+  ros::param::get("maxReading", maxReading);
+  ros::param::get("minPos", minPos);
+  ros::param::get("maxPos", maxPos);
+  ros::param::get("threshold", filterThreshold);
+  ros::param::get("average", filterAverage);
+  ros::param::get("log", outputLog);
+
+  int stepId = 1;
+  std::map<std::string, double> stepParams;
+
+  while (ros::param::get(std::string("steps/step") + std::to_string(stepId++), stepParams))
+  {
+    step s;
+    s.velocity = stepParams["velocity"];
+    s.duration = stepParams["duration"];
+    steps.push_back(s);
+  }
+
+  if (steps.size() > 0)
+  {
+    running = true;
+  }
+}
+
+/*----------------------------------------------------------*\
+| Initialization
+\*----------------------------------------------------------*/
+
+void initialize(ros::NodeHandle node)
+{
+  // Initialize analog subscriber
+  sub = node.subscribe<str1ker::Adc>(
+    inputTopic,
+    QUEUE_SIZE,
+    &feedback
+  );
+
+  // Initialize analog publisher
+  pub = node.advertise<str1ker::Pwm>(
+    outputTopic,
+    QUEUE_SIZE
+  );
+
+  // Initialize input filter
+  pFilter = std::unique_ptr<histogramFilter>(
+    new histogramFilter(filterThreshold, filterAverage));
+
+  // Open the log file
+  logFile.open(outputLog);
 }
 
 /*----------------------------------------------------------*\
@@ -164,7 +263,7 @@ void feedback(const str1ker::Adc::ConstPtr& msg)
   int reading = (*pFilter)(msg->adc[input]);
 
   // Re-map to position
-  pos = map((double)reading, (double)minReading, (double)maxReading, minPos, maxPos);
+  position = map((double)reading, (double)minReading, (double)maxReading, minPos, maxPos);
 }
 
 /*----------------------------------------------------------*\
