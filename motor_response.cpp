@@ -12,6 +12,7 @@
 | Includes
 \*----------------------------------------------------------*/
 
+#include <memory>
 #include <ros/ros.h>
 #include <str1ker/Adc.h>
 #include <str1ker/Pwm.h>
@@ -46,7 +47,9 @@ int minPwm = PWM_MIN, maxPwm = PWM_MAX;
 double minVelocity = 0.0, maxVelocity = 1.0;
 int minReading = ANALOG_MIN, maxReading = ANALOG_MAX;
 double minPos = 0.0, maxPos = 1.0;
-histogramFilter filter(8, 8);
+int filterThreshold;
+int filterAverage;
+std::unique_ptr<histogramFilter> pFilter;
 
 // State
 
@@ -88,6 +91,8 @@ int main(int argc, char** argv)
     ros::param::get("maxReading", maxReading);
     ros::param::get("minPos", minPos);
     ros::param::get("maxPos", maxPos);
+    ros::param::get("threshold", filterThreshold);
+    ros::param::get("average", filterAverage);
 
     // Initialize analog subscriber
     sub = node.subscribe<str1ker::Adc>(
@@ -101,6 +106,10 @@ int main(int argc, char** argv)
       outputTopic,
       QUEUE_SIZE
     );
+
+    // Initialize input filter
+    pFilter = std::unique_ptr<histogramFilter>(
+      new histogramFilter(filterThreshold, filterAverage));
 
     // Run node
     ros::Rate rate(spinRate);
@@ -152,7 +161,7 @@ void command(double velocity)
 void feedback(const str1ker::Adc::ConstPtr& msg)
 {
   // Read analog input
-  int reading = filter(msg->adc[input]);
+  int reading = (*pFilter)(msg->adc[input]);
 
   // Re-map to position
   pos = map((double)reading, (double)minReading, (double)maxReading, minPos, maxPos);

@@ -23,7 +23,7 @@ public:
         m_minCount(-1),
         m_max(-1),
         m_maxCount(-1),
-        m_buffer(8)
+        m_buffer(average)
     {
     }
 

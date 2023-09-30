@@ -14,3 +14,5 @@ minReading: 0
 maxReading: 1024
 minPos: 0
 maxPos: 1
+threshold: 8
+average: 16
