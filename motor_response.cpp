@@ -15,12 +15,7 @@
 #include <ros/ros.h>
 #include <str1ker/Adc.h>
 #include <str1ker/Pwm.h>
-
-/*----------------------------------------------------------*\
-| Definitions
-\*----------------------------------------------------------*/
-
-#define MAX_READINGS   64
+#include "histogramFilter.h"
 
 /*----------------------------------------------------------*\
 | Constants
@@ -42,6 +37,7 @@ const int ANALOG_MAX = 1024;
 
 std::string inputTopic;
 std::string outputTopic;
+
 int spinRate;
 int input;
 int lpwm;
@@ -50,8 +46,7 @@ int minPwm = PWM_MIN, maxPwm = PWM_MAX;
 double minVelocity = 0.0, maxVelocity = 1.0;
 int minReading = ANALOG_MIN, maxReading = ANALOG_MAX;
 double minPos = 0.0, maxPos = 1.0;
-int readings[MAX_READINGS] = {0};
-int readingIndex = 0;
+histogramFilter filter(8, 8);
 
 // State
 
@@ -66,7 +61,6 @@ ros::Publisher pub;
 \*----------------------------------------------------------*/
 
 void feedback(const str1ker::Adc::ConstPtr& msg);
-double butterworth(const int* input, int count, int order, std::vector<double> a, std::vector<double> b);
 template<class T> T map(T value, T min, T max, T targetMin, T targetMax);
 template<class T> T clamp(T value, T min, T max);
 
@@ -113,7 +107,7 @@ int main(int argc, char** argv)
 
     while(node.ok())
     {
-        ROS_INFO("position %g", pos);
+        ROS_INFO("position %.2g", pos);
 
         ros::spinOnce();
         rate.sleep();
@@ -158,26 +152,10 @@ void command(double velocity)
 void feedback(const str1ker::Adc::ConstPtr& msg)
 {
   // Read analog input
-  int reading = msg->adc[input];
+  int reading = filter(msg->adc[input]);
 
-  // Accumulate readings
-  readings[readingIndex++] = reading;
-
-  if (readingIndex == MAX_READINGS)
-  {
-    readingIndex = 0;
-
-    double averageReading = butterworth(
-      readings,
-      MAX_READINGS,
-      2,
-      // constants for 2nd order filter at 0.5
-      {0.2929, 0.5858, 0.2929},
-      {1.0000, 0.0000, 0.1716}
-    );
-
-    pos = map(averageReading, (double)minReading, (double)maxReading, minPos, maxPos);
-  }
+  // Re-map to position
+  pos = map((double)reading, (double)minReading, (double)maxReading, minPos, maxPos);
 }
 
 /*----------------------------------------------------------*\
@@ -195,55 +173,4 @@ template<class T> T clamp(T value, T min, T max)
 template<class T> T map(T value, T min, T max, T targetMin, T targetMax)
 {
   return (value - min) / (max - min) * (targetMax - targetMin) + targetMin;
-}
-
-double butterworth(const int* input, int count, int order, std::vector<double> a, std::vector<double> b)
-{
-  std::vector<double> output(count);
-  output[0] = b[0] * input[0];
-
-  for (int n = 1; n <= order; n++)
-  {
-    double sum = 0.0;
-
-    // Accumulate filter tap samples from input
-    for (int j = 0; j < n + 1; j++)
-    {
-      sum += b[j] * input[n - j];
-    }
-
-    // Accumulate filter tap samples from output
-    for (int j = 0; j < n; j++)
-    {
-      sum -= a[j + 1] * output[n - j - 1];
-    }
-
-    output[n] = sum;
-  }
-
-  for (int n = order + 1; n <= count; n++)
-  {
-    double sum = 0.0;
-
-    for (int j = 0; j <= order; j++)
-    {
-      sum += b[j] * input[n - j];
-    }
-
-    for (int j = 0; j < order; j++)
-    {
-      sum -= a[j + 1] * output[n - j - 1];
-    }
-
-    output[n] = sum;
-  }
-
-  int sum = 0;
-
-  for (int n = 0; n < count; n++)
-  {
-    sum += output[n];
-  }
-
-  return (double)sum / (double)count;
 }

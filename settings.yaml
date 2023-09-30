@@ -10,7 +10,7 @@ maxVelocity: 1
 # input
 inputTopic: /robot/adc
 input: 0
-minReading: 274
-maxReading: 831
+minReading: 0
+maxReading: 1024
 minPos: 0
 maxPos: 1
