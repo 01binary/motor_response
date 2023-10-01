@@ -133,13 +133,15 @@ int main(int argc, char** argv)
       }
 
       // Log command and position
-      logFile << (time - logStart).toSec() << ", "
+      double elapsed = (time - logStart).toSec();
+
+      logFile << elapsed << ", "
               << steps[currentStep].velocity << ", "
               << position << std::endl;
 
       ROS_INFO(
-        "step %d\tvelocity %g\tposition %g",
-        int(currentStep + 1), steps[currentStep].velocity, position
+        "time %g\tstep %d\tvelocity %g\tposition %g",
+        elapsed, int(currentStep + 1), steps[currentStep].velocity, position
       );
     }
 
