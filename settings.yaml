@@ -5,13 +5,15 @@ lpwm: 0
 rpwm: 1
 minPwm: 0
 maxPwm: 255
+# motor has 3.14160 rad/s at 255 pwm
 minVelocity: 0.0
 maxVelocity: 1.0
 # input
 inputTopic: /robot/adc
 input: 0
-minReading: 0
-maxReading: 1024
+# 522 middle, 293 right, 790 left
+minReading: 293
+maxReading: 790
 minPos: 0
 maxPos: 1
 threshold: 8

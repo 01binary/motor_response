@@ -72,6 +72,7 @@ std::vector<step> steps;
 
 // State
 std::ofstream logFile;
+int reading = -1;
 double position = std::numeric_limits<double>::infinity();
 size_t currentStep = 0;
 
@@ -140,8 +141,8 @@ int main(int argc, char** argv)
               << position << std::endl;
 
       ROS_INFO(
-        "time %g\tstep %d\tvelocity %g\tposition %g",
-        elapsed, int(currentStep + 1), steps[currentStep].velocity, position
+        "time %g\tstep %d\tvelocity %g\tposition %g\treading %d",
+        elapsed, int(currentStep + 1), steps[currentStep].velocity, position, reading
       );
     }
 
@@ -265,7 +266,7 @@ void command(double velocity)
 void feedback(const str1ker::Adc::ConstPtr& msg)
 {
   // Read analog input
-  int reading = (*pFilter)(msg->adc[input]);
+  reading = (*pFilter)(msg->adc[input]);
 
   // Re-map to position
   position = map((double)reading, (double)minReading, (double)maxReading, minPos, maxPos);
