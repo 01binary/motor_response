@@ -16,7 +16,7 @@ minPos: 0
 maxPos: 1
 threshold: 8
 average: 16
-log: ~/catkin_ws/response.csv
+log: /home/val/catkin_ws/response.csv
 steps:
   step1:
     velocity: 1.0

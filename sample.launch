@@ -12,11 +12,11 @@
   />
 
   <!-- Analog/Digital I/O -->
-  <node
+  <!--<node
     name="analog"
     pkg="rosserial_python"
     type="serial_node.py"
     args="/dev/ttyACM0"
     required="true"
-  />
+  />-->
 </launch>

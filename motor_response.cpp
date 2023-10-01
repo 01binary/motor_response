@@ -72,9 +72,8 @@ std::vector<step> steps;
 
 // State
 std::ofstream logFile;
-double position = 0.0;
+double position = std::numeric_limits<double>::infinity();
 size_t currentStep = 0;
-bool running = false;
 
 // ROS interface
 ros::Subscriber sub;
@@ -113,23 +112,24 @@ int main(int argc, char** argv)
 
   while(node.ok())
   {
-    if (running)
+    if (position == std::numeric_limits<double>::infinity())
+    {
+      ROS_INFO("waiting for feedback...");
+    }
+    else
     {
       ros::Time time = ros::Time::now();
       ros::Duration duration = time - start;
 
       if (duration.toSec() >= steps[currentStep].duration)
       {
-        currentStep++;
+        currentStep = (currentStep + 1) % steps.size();
         start = time;
-
-        if (currentStep >= steps.size())
-        {
-          break;
-        }
 
         // Execute command
         command(steps[currentStep].velocity);
+
+        logFile.flush();
       }
 
       // Log command and position
@@ -141,10 +141,6 @@ int main(int argc, char** argv)
         "step %d\tvelocity %g\tposition %g",
         int(currentStep + 1), steps[currentStep].velocity, position
       );
-    }
-    else
-    {
-      ROS_INFO("position %g", position);
     }
 
     ros::spinOnce();
@@ -190,11 +186,6 @@ void configure()
     s.duration = stepParams["duration"];
     steps.push_back(s);
   }
-
-  if (steps.size() > 0)
-  {
-    running = true;
-  }
 }
 
 /*----------------------------------------------------------*\
@@ -220,8 +211,20 @@ void initialize(ros::NodeHandle node)
   pFilter = std::unique_ptr<histogramFilter>(
     new histogramFilter(filterThreshold, filterAverage));
 
-  // Open the log file
+  // Initialize log file
   logFile.open(outputLog);
+
+  if (!logFile.is_open())
+  {
+    ROS_ERROR("Failed to open log file %s", outputLog.c_str());
+    exit(1);
+  }
+  else
+  {
+    logFile << "time (sec)" << ", "
+            << "velocity" << ", "
+            << "position" << std::endl;
+  }
 }
 
 /*----------------------------------------------------------*\
