@@ -12,8 +12,8 @@ maxVelocity: 1.0
 inputTopic: /robot/adc
 input: 0
 # 522 middle, 293 right, 790 left
-minReading: 293
-maxReading: 790
+minReading: 0
+maxReading: 1024
 minPos: 0
 maxPos: 1
 threshold: 8
@@ -21,11 +21,11 @@ average: 16
 log: /home/val/catkin_ws/response.csv
 steps:
   step1:
-    velocity: 1.0
-    duration: 1.0
+    velocity: -0.1
+    duration: 3.0
   step2:
-    velocity: -1.0
-    duration: 1.0
+    velocity: 0.1
+    duration: 3.0
   step3:
-    velocity: 0.0
-    duration: 2.0
+    velocity: 0
+    duration: 3.0

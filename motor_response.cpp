@@ -74,6 +74,8 @@ std::vector<step> steps;
 std::ofstream logFile;
 int reading = -1;
 double position = std::numeric_limits<double>::infinity();
+uint8_t lpwmCommand = 0;
+uint8_t rpwmCommand = 0;
 size_t currentStep = 0;
 
 // ROS interface
@@ -88,6 +90,7 @@ void configure();
 void initialize(ros::NodeHandle node);
 void command(double velocity);
 void feedback(const str1ker::Adc::ConstPtr& msg);
+void record(double elapsed);
 template<class T> T map(T value, T min, T max, T targetMin, T targetMax);
 template<class T> T clamp(T value, T min, T max);
 
@@ -108,8 +111,9 @@ int main(int argc, char** argv)
 
   // Run node
   ros::Rate rate(spinRate);
-  ros::Time logStart = ros::Time::now();
-  ros::Time start = ros::Time::now();
+  ros::Time startTime = ros::Time::now();
+  ros::Time stepTime = ros::Time::now();
+  bool waiting = true;
 
   while(node.ok())
   {
@@ -117,33 +121,29 @@ int main(int argc, char** argv)
     {
       ROS_INFO("waiting for feedback...");
     }
+    else if (waiting)
+    {
+      waiting = false;
+      startTime = ros::Time::now();
+    }
     else
     {
       ros::Time time = ros::Time::now();
-      ros::Duration duration = time - start;
+      ros::Duration stepDuration = time - stepTime;
+      ros::Duration totalDuration = time - startTime;
 
-      if (duration.toSec() >= steps[currentStep].duration)
+      if (stepDuration.toSec() >= steps[currentStep].duration)
       {
         currentStep = (currentStep + 1) % steps.size();
-        start = time;
+        stepTime = time;
 
         // Execute command
         command(steps[currentStep].velocity);
-
         logFile.flush();
       }
 
       // Log command and position
-      double elapsed = (time - logStart).toSec();
-
-      logFile << elapsed << ", "
-              << steps[currentStep].velocity << ", "
-              << position << std::endl;
-
-      ROS_INFO(
-        "time %g\tstep %d\tvelocity %g\tposition %g\treading %d",
-        elapsed, int(currentStep + 1), steps[currentStep].velocity, position, reading
-      );
+      record(totalDuration.toSec());
     }
 
     ros::spinOnce();
@@ -226,7 +226,10 @@ void initialize(ros::NodeHandle node)
   {
     logFile << "time (sec)" << ", "
             << "velocity" << ", "
-            << "position" << std::endl;
+            << "LPWM" << ", "
+            << "RPWM" << ", "
+            << "position" << ", "
+            << "reading" << std::endl;
   }
 }
 
@@ -241,19 +244,22 @@ void command(double velocity)
   uint8_t dutyCycle = (uint8_t)map(
     commandedVelocity, minVelocity, maxVelocity, (double)minPwm, (double)maxPwm);
 
+  lpwmCommand = (velocity >= 0 ? 0 : dutyCycle);
+  rpwmCommand = (velocity >= 0 ? dutyCycle : 0);
+
   str1ker::Pwm msg;
   msg.channels.resize(2);
 
-  // RPWM
+  // LPWM
   msg.channels[0].channel = lpwm;
   msg.channels[0].mode = str1ker::PwmChannel::MODE_ANALOG;
-  msg.channels[0].value = (velocity >= 0 ? dutyCycle : 0);
+  msg.channels[0].value = lpwmCommand;
   msg.channels[0].duration = 0;
 
-  // LPWM
+  // RPWM
   msg.channels[1].channel = rpwm;
   msg.channels[1].mode = str1ker::PwmChannel::MODE_ANALOG;
-  msg.channels[1].value = (velocity >= 0 ? 0 : dutyCycle);
+  msg.channels[1].value = rpwmCommand;
   msg.channels[1].duration = 0;
 
   pub.publish(msg);
@@ -270,6 +276,31 @@ void feedback(const str1ker::Adc::ConstPtr& msg)
 
   // Re-map to position
   position = map((double)reading, (double)minReading, (double)maxReading, minPos, maxPos);
+}
+
+/*----------------------------------------------------------*\
+| Logging
+\*----------------------------------------------------------*/
+
+void record(double elapsed)
+{
+  logFile << elapsed << ", "
+          << steps[currentStep].velocity << ", "
+          << lpwmCommand << ", "
+          << rpwmCommand << ", "
+          << position << ", "
+          << reading << std::endl;
+
+  ROS_INFO(
+    "[%d] time %#.4g\tvel %#+.4g\t\tLPWM %3d\tRPWM %3d\tpos %#.4g\treading %4d",
+    int(currentStep + 1),
+    elapsed,
+    steps[currentStep].velocity,
+    int(lpwmCommand),
+    int(rpwmCommand),
+    position,
+    reading
+  );
 }
 
 /*----------------------------------------------------------*\
