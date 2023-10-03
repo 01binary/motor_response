@@ -1,11 +1,31 @@
+/*
+  histogramFilter.h
+
+  Simple histogram and moving average filter for analog input
+  Created 09/20/2023
+
+  Copyright (C) 2023 Valeriy Novytskyy
+  This software is licensed under GNU GPLv3
+*/
+
+/*----------------------------------------------------------*\
+| Includes
+\*----------------------------------------------------------*/
+
 #include <map>
 #include <vector>
 #include <ros/ros.h>
 
+/*----------------------------------------------------------*\
+| histogramFilter class
+\*----------------------------------------------------------*/
+
 class histogramFilter
 {
 private:
+    // Threshold is the minimum difference between incoming value and last value to trigger a reset
     int m_threshold;
+    // Average is how many samples to average on the way out (some additional smoothing)
     int m_average;
     int m_min;
     int m_minCount;
@@ -36,6 +56,7 @@ public:
 
         if (breachedMin || breachedMax)
         {
+            // Reset histogram bins when the input is changing significantly
             m_bins.clear();
             m_min = -1;
             m_minCount = -1;
@@ -45,6 +66,7 @@ public:
         }
         else
         {
+            // Classify input into bins, and return the average of the bin with the most samples
             for (auto& bin : m_bins)
             {
                 if (bin.second > m_maxCount || m_maxCount == -1)

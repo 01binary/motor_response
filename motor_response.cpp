@@ -12,6 +12,10 @@
 | Includes
 \*----------------------------------------------------------*/
 
+//
+// Standard library
+//
+
 #include <map>
 #include <memory>
 #include <limits>
@@ -20,10 +24,23 @@
 #include <iostream>
 #include <fstream>
 
+//
+// ROS
+//
+
 #include <ros/ros.h>
+
+//
+// Messages
+//
 
 #include <str1ker/Adc.h>
 #include <str1ker/Pwm.h>
+#include <trajectory_msgs/JointTrajectory.h>
+
+//
+// Helpers
+//
 
 #include "histogramFilter.h"
 
@@ -41,46 +58,104 @@ struct step
 | Constants
 \*----------------------------------------------------------*/
 
+// Queue size for subscribers and publishers
 const int QUEUE_SIZE = 16;
 
+// Defaults for PWM range
 const int PWM_MIN = 0;
-const int PWM_MAX = 255;
+const int PWM_MAX = 4096;
 
+// Defaults for analog input range
 const int ANALOG_MIN = 0;
-const int ANALOG_MAX = 1024;
+const int ANALOG_MAX = 1023;
 
 /*----------------------------------------------------------*\
 | Variables
 \*----------------------------------------------------------*/
 
+//
 // Configuration
+//
+
+// Input topic for listening to analog readings from absolute encoder
 std::string inputTopic;
+
+// Input topic for listening to trajectory commands
+std::string commandTopic;
+
+// The joint to watch for in trajectory commands
+std::string commandJoint;
+
+// Output topic for publishing PWM commands
 std::string outputTopic;
+
+// Output log CSV file for recording commands and readings
 std::string outputLog;
+
+// Playback rate
 int spinRate;
+
+// Analog input channel
 int input;
+
+// PWM output channels
 int lpwm;
 int rpwm;
+
+// PWM output range (mapped form velocity)
 int minPwm = PWM_MIN, maxPwm = PWM_MAX;
+
+// Velocity range
 double minVelocity = 0.0, maxVelocity = 1.0;
+
+// Analog reading range
 int minReading = ANALOG_MIN, maxReading = ANALOG_MAX;
+
+// Position range (mapped from analog reading)
 double minPos = 0.0, maxPos = 1.0;
+
+// Filter for analog input
 int filterThreshold;
 int filterAverage;
 std::unique_ptr<histogramFilter> pFilter;
+
+// Steps to play back (velocity, duration)
 std::vector<step> steps;
 
+//
 // State
+//
+
+// Opened log file for recording commands and readings
 std::ofstream logFile;
+
+// Last filtered analog reading
 int reading = -1;
+
+// Last position mapped from last reading
 double position = std::numeric_limits<double>::infinity();
+
+// Last PWM commands
 uint8_t lpwmCommand = 0;
 uint8_t rpwmCommand = 0;
-size_t currentStep = 0;
 
+// Current step being played back and when it started
+size_t currentStep = 0;
+ros::Time stepTime;
+
+//
 // ROS interface
-ros::Subscriber sub;
-ros::Publisher pub;
+//
+
+// Subscriber for receiving analog readings from motor absolute encoder
+ros::Subscriber adcSub;
+
+// Publisher for sending PWM commands to motor driver
+ros::Publisher pwmPub;
+
+// Subscriber for receiving trajectory commands
+// (instead of playing back pre-configured steps)
+ros::Subscriber trjSub;
 
 /*----------------------------------------------------------*\
 | Declarations
@@ -88,6 +163,8 @@ ros::Publisher pub;
 
 void configure();
 void initialize(ros::NodeHandle node);
+void playback(ros::Time time);
+void listen(const trajectory_msgs::JointTrajectory::ConstPtr& msg);
 void command(double velocity);
 void feedback(const str1ker::Adc::ConstPtr& msg);
 void record(double elapsed);
@@ -112,45 +189,35 @@ int main(int argc, char** argv)
   // Run node
   ros::Rate rate(spinRate);
   ros::Time startTime = ros::Time::now();
-  ros::Time stepTime = ros::Time::now();
   bool waiting = true;
 
   while(node.ok())
   {
     if (position == std::numeric_limits<double>::infinity())
     {
+      // Wait until we have readings from the encoder
       ROS_INFO("waiting for feedback...");
     }
     else if (waiting)
     {
+      // Initialize playback
       waiting = false;
       startTime = ros::Time::now();
+      stepTime = ros::Time::now();
     }
     else
     {
+      // Play back steps from configuration
       ros::Time time = ros::Time::now();
-      ros::Duration stepDuration = time - stepTime;
-      ros::Duration totalDuration = time - startTime;
+      playback(time);
 
-      if (stepDuration.toSec() >= steps[currentStep].duration)
-      {
-        currentStep = (currentStep + 1) % steps.size();
-        stepTime = time;
-
-        // Execute command
-        command(steps[currentStep].velocity);
-        logFile.flush();
-      }
-
-      // Log command and position
-      record(totalDuration.toSec());
+      // Record current command and position
+      record((time - startTime).toSec());
     }
 
     ros::spinOnce();
     rate.sleep();
   }
-
-  logFile.close();
 
   return 0;
 }
@@ -164,6 +231,8 @@ void configure()
   ros::param::get("rate", spinRate);
   ros::param::get("inputTopic", inputTopic);
   ros::param::get("outputTopic", outputTopic);
+  ros::param::get("commandTopic", commandTopic);
+  ros::param::get("commandJoint", commandJoint);
   ros::param::get("input", input);
   ros::param::get("lpwm", lpwm);
   ros::param::get("rpwm", rpwm);
@@ -197,24 +266,34 @@ void configure()
 
 void initialize(ros::NodeHandle node)
 {
-  // Initialize analog subscriber
-  sub = node.subscribe<str1ker::Adc>(
+  // Initialize analog input subscriber
+  adcSub = node.subscribe<str1ker::Adc>(
     inputTopic,
     QUEUE_SIZE,
     &feedback
   );
 
-  // Initialize analog publisher
-  pub = node.advertise<str1ker::Pwm>(
+  // Initialize joint trajectory subscriber
+  if (commandTopic.size())
+  {
+    trjSub = node.subscribe<trajectory_msgs::JointTrajectory>(
+      commandTopic,
+      QUEUE_SIZE,
+      &listen
+    );
+  }
+
+  // Initialize PWM output publisher
+  pwmPub = node.advertise<str1ker::Pwm>(
     outputTopic,
     QUEUE_SIZE
   );
 
-  // Initialize input filter
+  // Initialize analog input filtering
   pFilter = std::unique_ptr<histogramFilter>(
     new histogramFilter(filterThreshold, filterAverage));
 
-  // Initialize log file
+  // Open the log file
   logFile.open(outputLog);
 
   if (!logFile.is_open())
@@ -224,12 +303,35 @@ void initialize(ros::NodeHandle node)
   }
   else
   {
+    // Write header row
     logFile << "time (sec)" << ", "
             << "velocity" << ", "
             << "LPWM" << ", "
             << "RPWM" << ", "
             << "position" << ", "
             << "reading" << std::endl;
+  }
+}
+
+/*----------------------------------------------------------*\
+| Playback
+\*----------------------------------------------------------*/
+
+void playback(ros::Time time)
+{
+  if (!steps.size()) return;
+
+  ros::Duration stepDuration = time - stepTime;
+
+  if (stepDuration.toSec() >= steps[currentStep].duration)
+  {
+    // Go to the next step
+    currentStep = (currentStep + 1) % steps.size();
+    stepTime = time;
+
+    // Execute command
+    command(steps[currentStep].velocity);
+    logFile.flush();
   }
 }
 
@@ -262,7 +364,23 @@ void command(double velocity)
   msg.channels[1].value = rpwmCommand;
   msg.channels[1].duration = 0;
 
-  pub.publish(msg);
+  pwmPub.publish(msg);
+}
+
+/*----------------------------------------------------------*\
+| Listen to joint trajectory commands
+\*----------------------------------------------------------*/
+
+void listen(const trajectory_msgs::JointTrajectory::ConstPtr& msg)
+{
+  // Find the joint index we are listening for
+  auto jointPos = std::find(msg->joint_names.cbegin(), msg->joint_names.cend(), commandJoint);
+
+  if (jointPos != msg->joint_names.cend())
+  {
+    // Command velocity for that joint
+    command(msg->points[jointPos - msg->joint_names.cbegin()].velocities.front());
+  }
 }
 
 /*----------------------------------------------------------*\
@@ -279,7 +397,7 @@ void feedback(const str1ker::Adc::ConstPtr& msg)
 }
 
 /*----------------------------------------------------------*\
-| Logging
+| Recording
 \*----------------------------------------------------------*/
 
 void record(double elapsed)
