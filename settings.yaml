@@ -4,16 +4,16 @@ outputTopic: /robot/pwm
 lpwm: 0
 rpwm: 1
 minPwm: 0
-maxPwm: 255
+maxPwm: 4096
 # motor has 3.14160 rad/s at 255 pwm
 minVelocity: 0.0
 maxVelocity: 1.0
 # input
 inputTopic: /robot/adc
 input: 0
-# 522 middle, 293 right, 790 left
+# base: 522 middle, 293 right, 790 left
 minReading: 0
-maxReading: 1024
+maxReading: 1023
 minPos: 0
 maxPos: 1
 threshold: 8
@@ -21,11 +21,11 @@ average: 16
 log: /home/val/catkin_ws/response.csv
 steps:
   step1:
-    velocity: -0.1
-    duration: 3.0
+    velocity: -0.01
+    duration: 2.0
   step2:
-    velocity: 0.1
-    duration: 3.0
+    velocity: 0.01
+    duration: 2.0
   step3:
     velocity: 0
     duration: 3.0
