@@ -36,7 +36,7 @@
 
 #include <str1ker/Adc.h>
 #include <str1ker/Pwm.h>
-#include <control_msgs/FollowJointTrajectoryGoal.h>
+#include <control_msgs/FollowJointTrajectoryActionGoal.h>
 
 //
 // Helpers
@@ -136,8 +136,8 @@ int reading = -1;
 double position = std::numeric_limits<double>::infinity();
 
 // Last PWM commands mapped from velocity command
-uint8_t lpwmCommand = 0;
-uint8_t rpwmCommand = 0;
+uint16_t lpwmCommand = 0;
+uint16_t rpwmCommand = 0;
 
 // Last velocity command
 double velocity = 0.0;
@@ -166,7 +166,7 @@ ros::Subscriber controlSub;
 void configure();
 void initialize(ros::NodeHandle node);
 void playback(ros::Time time);
-void control(const control_msgs::FollowJointTrajectoryGoal::ConstPtr& msg);
+void control(const control_msgs::FollowJointTrajectoryActionGoal::ConstPtr& msg);
 void command(double velocity);
 void feedback(const str1ker::Adc::ConstPtr& msg);
 void record(double elapsed);
@@ -206,11 +206,13 @@ int main(int argc, char** argv)
       waiting = false;
       startTime = ros::Time::now();
       stepTime = ros::Time::now();
+      ROS_INFO("ready");
     }
     else
     {
-      // Play back steps from configuration
       ros::Time time = ros::Time::now();
+
+      // Play back steps from configuration
       playback(time);
 
       // Record current command and position
@@ -278,7 +280,8 @@ void initialize(ros::NodeHandle node)
   // Initialize joint trajectory subscriber
   if (controlTopic.size())
   {
-    controlSub = node.subscribe<control_msgs::FollowJointTrajectoryGoal>(
+    ROS_INFO("subscribing to %s", controlTopic.c_str());
+    controlSub = node.subscribe<control_msgs::FollowJointTrajectoryActionGoal>(
       controlTopic,
       QUEUE_SIZE,
       &control
@@ -296,22 +299,25 @@ void initialize(ros::NodeHandle node)
     new histogramFilter(filterThreshold, filterAverage));
 
   // Open the log file
-  logFile.open(outputLog);
+  if (outputLog.size())
+  {
+    logFile.open(outputLog);
 
-  if (!logFile.is_open())
-  {
-    ROS_ERROR("Failed to open log file %s", outputLog.c_str());
-    exit(1);
-  }
-  else
-  {
-    // Write header row
-    logFile << "time (sec)" << ", "
-            << "velocity" << ", "
-            << "LPWM" << ", "
-            << "RPWM" << ", "
-            << "position" << ", "
-            << "reading" << std::endl;
+    if (!logFile.is_open())
+    {
+      ROS_ERROR("Failed to open log file %s", outputLog.c_str());
+      exit(1);
+    }
+    else
+    {
+      // Write header row
+      logFile << "time (sec)" << ", "
+              << "velocity" << ", "
+              << "LPWM" << ", "
+              << "RPWM" << ", "
+              << "position" << ", "
+              << "reading" << std::endl;
+    }
   }
 }
 
@@ -334,7 +340,8 @@ void playback(ros::Time time)
     // Execute command
     velocity = steps[currentStep].velocity;
     command(velocity);
-    logFile.flush();
+
+    if (outputLog.size()) logFile.flush();
   }
 }
 
@@ -346,7 +353,7 @@ void command(double velocity)
 {
   double commandedVelocity = clamp(abs(velocity), minVelocity, maxVelocity);
 
-  uint8_t dutyCycle = (uint8_t)map(
+  uint16_t dutyCycle = (uint16_t)map(
     commandedVelocity, minVelocity, maxVelocity, (double)minPwm, (double)maxPwm);
 
   lpwmCommand = (velocity >= 0 ? 0 : dutyCycle);
@@ -374,18 +381,36 @@ void command(double velocity)
 | Listen to joint trajectory commands
 \*----------------------------------------------------------*/
 
-void control(const control_msgs::FollowJointTrajectoryGoal::ConstPtr& msg)
+void control(const control_msgs::FollowJointTrajectoryActionGoal::ConstPtr& msg)
 {
-  auto trajectory = msg->trajectory;
+  auto trajectory = msg->goal.trajectory;
 
   // Find the joint index we are listening for
   auto jointPos = std::find(trajectory.joint_names.cbegin(), trajectory.joint_names.cend(), joint);
 
   if (jointPos != trajectory.joint_names.cend())
   {
-    // Command velocity for that joint
+    // Build steps from the trajectory
     size_t jointIndex = jointPos - trajectory.joint_names.cbegin();
-    command(trajectory.points.back().velocities[jointIndex]);
+    std::vector<step> trajectorySteps(trajectory.points.size());
+    double prevTime = 0.0;
+
+    for (int n = 0; n < trajectorySteps.size(); n++)
+    {
+      trajectorySteps[n].velocity = trajectory.points[n].velocities[jointIndex];
+
+      double pointTime = trajectory.points[n].time_from_start.toSec();
+      trajectorySteps[n].duration = pointTime - prevTime;
+      prevTime = pointTime;
+    }
+
+    steps = trajectorySteps;
+
+    command(velocity);
+  }
+  else
+  {
+    ROS_WARN("joint %s not found in trajectory", joint.c_str());
   }
 }
 
@@ -408,6 +433,8 @@ void feedback(const str1ker::Adc::ConstPtr& msg)
 
 void record(double elapsed)
 {
+  if (!outputLog.size()) return;
+
   logFile << elapsed << ", "
           << velocity << ", "
           << lpwmCommand << ", "

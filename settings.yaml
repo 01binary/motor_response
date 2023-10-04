@@ -5,14 +5,14 @@ lpwm: 0
 rpwm: 1
 minPwm: 0
 maxPwm: 4096
-# motor has 3.14160 rad/s at 255 pwm
+# base motor has 3.14160 rad/s at 255 pwm
 minVelocity: 0.0
 maxVelocity: 1.0
 # input
 inputTopic: /robot/adc
 input: 0
 # control
-controlTopic: /arm_velocity_controller/command
+controlTopic: /arm_velocity_controller/follow_joint_trajectory/goal
 joint: base
 # base: 522 middle, 293 right, 790 left
 minReading: 0
