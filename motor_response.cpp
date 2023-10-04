@@ -36,7 +36,7 @@
 
 #include <str1ker/Adc.h>
 #include <str1ker/Pwm.h>
-#include <trajectory_msgs/JointTrajectory.h>
+#include <control_msgs/FollowJointTrajectoryGoal.h>
 
 //
 // Helpers
@@ -81,10 +81,10 @@ const int ANALOG_MAX = 1023;
 std::string inputTopic;
 
 // Input topic for listening to trajectory commands
-std::string commandTopic;
+std::string controlTopic;
 
 // The joint to watch for in trajectory commands
-std::string commandJoint;
+std::string joint;
 
 // Output topic for publishing PWM commands
 std::string outputTopic;
@@ -153,9 +153,8 @@ ros::Subscriber adcSub;
 // Publisher for sending PWM commands to motor driver
 ros::Publisher pwmPub;
 
-// Subscriber for receiving trajectory commands
-// (instead of playing back pre-configured steps)
-ros::Subscriber trjSub;
+// Subscriber for receiving follow joint trajectory commands
+ros::Subscriber controlSub;
 
 /*----------------------------------------------------------*\
 | Declarations
@@ -164,7 +163,7 @@ ros::Subscriber trjSub;
 void configure();
 void initialize(ros::NodeHandle node);
 void playback(ros::Time time);
-void listen(const trajectory_msgs::JointTrajectory::ConstPtr& msg);
+void listen(const control_msgs::FollowJointTrajectoryGoal::ConstPtr& msg);
 void command(double velocity);
 void feedback(const str1ker::Adc::ConstPtr& msg);
 void record(double elapsed);
@@ -231,8 +230,8 @@ void configure()
   ros::param::get("rate", spinRate);
   ros::param::get("inputTopic", inputTopic);
   ros::param::get("outputTopic", outputTopic);
-  ros::param::get("commandTopic", commandTopic);
-  ros::param::get("commandJoint", commandJoint);
+  ros::param::get("controlTopic", controlTopic);
+  ros::param::get("joint", joint);
   ros::param::get("input", input);
   ros::param::get("lpwm", lpwm);
   ros::param::get("rpwm", rpwm);
@@ -274,10 +273,10 @@ void initialize(ros::NodeHandle node)
   );
 
   // Initialize joint trajectory subscriber
-  if (commandTopic.size())
+  if (controlTopic.size())
   {
-    trjSub = node.subscribe<trajectory_msgs::JointTrajectory>(
-      commandTopic,
+    controlSub = node.subscribe<control_msgs::FollowJointTrajectoryGoal>(
+      controlTopic,
       QUEUE_SIZE,
       &listen
     );
@@ -371,15 +370,18 @@ void command(double velocity)
 | Listen to joint trajectory commands
 \*----------------------------------------------------------*/
 
-void listen(const trajectory_msgs::JointTrajectory::ConstPtr& msg)
+void listen(const control_msgs::FollowJointTrajectoryGoal::ConstPtr& msg)
 {
-  // Find the joint index we are listening for
-  auto jointPos = std::find(msg->joint_names.cbegin(), msg->joint_names.cend(), commandJoint);
+  auto trajectory = msg->trajectory;
 
-  if (jointPos != msg->joint_names.cend())
+  // Find the joint index we are listening for
+  auto jointPos = std::find(trajectory.joint_names.cbegin(), trajectory.joint_names.cend(), joint);
+
+  if (jointPos != trajectory.joint_names.cend())
   {
     // Command velocity for that joint
-    command(msg->points[jointPos - msg->joint_names.cbegin()].velocities.front());
+    size_t jointIndex = jointPos - trajectory.joint_names.cbegin();
+    command(trajectory.points.back().velocities[jointIndex]);
   }
 }
 

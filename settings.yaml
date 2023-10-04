@@ -11,6 +11,9 @@ maxVelocity: 1.0
 # input
 inputTopic: /robot/adc
 input: 0
+# control
+controlTopic: /arm_velocity_controller/command
+joint: base
 # base: 522 middle, 293 right, 790 left
 minReading: 0
 maxReading: 1023
@@ -19,13 +22,3 @@ maxPos: 1
 threshold: 8
 average: 16
 log: /home/val/catkin_ws/response.csv
-steps:
-  step1:
-    velocity: -0.01
-    duration: 2.0
-  step2:
-    velocity: 0.01
-    duration: 2.0
-  step3:
-    velocity: 0
-    duration: 3.0
