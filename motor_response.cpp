@@ -460,7 +460,7 @@ void record(double elapsed)
 
 template<class T> T clamp(T value, T min, T max)
 {
-  if (value < min) return min;
+  if (value < min && abs(value) > std::numeric_limits<double>::epsilon()) return min;
   if (value > max) return max;
 
   return value;
@@ -468,5 +468,12 @@ template<class T> T clamp(T value, T min, T max)
 
 template<class T> T map(T value, T min, T max, T targetMin, T targetMax)
 {
-  return (value - min) / (max - min) * (targetMax - targetMin) + targetMin;
+  if (abs(value) > std::numeric_limits<double>::epsilon())
+  {
+    return (value - min) / (max - min) * (targetMax - targetMin) + targetMin;
+  }
+  else
+  {
+    return 0;
+  }
 }
