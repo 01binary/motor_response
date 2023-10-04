@@ -3,6 +3,7 @@ rate: 40
 outputTopic: /robot/pwm
 lpwm: 0
 rpwm: 1
+# todo we need to handle zero somehow
 minPwm: 0
 maxPwm: 4096
 # base motor has 3.14160 rad/s at 255 pwm
