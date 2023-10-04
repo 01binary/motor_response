@@ -135,9 +135,12 @@ int reading = -1;
 // Last position mapped from last reading
 double position = std::numeric_limits<double>::infinity();
 
-// Last PWM commands
+// Last PWM commands mapped from velocity command
 uint8_t lpwmCommand = 0;
 uint8_t rpwmCommand = 0;
+
+// Last velocity command
+double velocity = 0.0;
 
 // Current step being played back and when it started
 size_t currentStep = 0;
@@ -163,7 +166,7 @@ ros::Subscriber controlSub;
 void configure();
 void initialize(ros::NodeHandle node);
 void playback(ros::Time time);
-void listen(const control_msgs::FollowJointTrajectoryGoal::ConstPtr& msg);
+void control(const control_msgs::FollowJointTrajectoryGoal::ConstPtr& msg);
 void command(double velocity);
 void feedback(const str1ker::Adc::ConstPtr& msg);
 void record(double elapsed);
@@ -278,7 +281,7 @@ void initialize(ros::NodeHandle node)
     controlSub = node.subscribe<control_msgs::FollowJointTrajectoryGoal>(
       controlTopic,
       QUEUE_SIZE,
-      &listen
+      &control
     );
   }
 
@@ -329,7 +332,8 @@ void playback(ros::Time time)
     stepTime = time;
 
     // Execute command
-    command(steps[currentStep].velocity);
+    velocity = steps[currentStep].velocity;
+    command(velocity);
     logFile.flush();
   }
 }
@@ -370,7 +374,7 @@ void command(double velocity)
 | Listen to joint trajectory commands
 \*----------------------------------------------------------*/
 
-void listen(const control_msgs::FollowJointTrajectoryGoal::ConstPtr& msg)
+void control(const control_msgs::FollowJointTrajectoryGoal::ConstPtr& msg)
 {
   auto trajectory = msg->trajectory;
 
@@ -405,7 +409,7 @@ void feedback(const str1ker::Adc::ConstPtr& msg)
 void record(double elapsed)
 {
   logFile << elapsed << ", "
-          << steps[currentStep].velocity << ", "
+          << velocity << ", "
           << lpwmCommand << ", "
           << rpwmCommand << ", "
           << position << ", "
@@ -415,7 +419,7 @@ void record(double elapsed)
     "[%d] time %#.4g\tvel %#+.4g\t\tLPWM %3d\tRPWM %3d\tpos %#.4g\treading %4d",
     int(currentStep + 1),
     elapsed,
-    steps[currentStep].velocity,
+    velocity,
     int(lpwmCommand),
     int(rpwmCommand),
     position,
