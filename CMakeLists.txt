@@ -8,6 +8,7 @@ find_package(
   REQUIRED COMPONENTS
     roscpp
     str1ker
+    control_toolbox
 )
 
 catkin_package(
@@ -15,6 +16,7 @@ catkin_package(
   CATKIN_DEPENDS
     roscpp
     actionlib
+    control_toolbox
 )
 
 include_directories(
@@ -23,8 +25,8 @@ include_directories(
 )
 
 add_executable(
-  ${PROJECT_NAME}
-  motor_response.cpp
+  sample
+  sample.cpp
 )
 
 add_dependencies(
@@ -32,13 +34,13 @@ add_dependencies(
 )
 
 target_link_libraries(
-  ${PROJECT_NAME}
+  sample
   ${catkin_LIBRARIES}
 )
 
 install(
   TARGETS
-    ${PROJECT_NAME}
+    sample
   RUNTIME
   DESTINATION
     ${CATKIN_PACKAGE_BIN_DESTINATION}

@@ -6,7 +6,7 @@
   <node
     name="motor_response"
     pkg="motor_response"
-    type="motor_response"
+    type="sample"
     required="true"
     output="screen"
   />
