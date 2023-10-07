@@ -81,8 +81,11 @@ motor actuator;
 // Sensor for reading position
 encoder sensor;
 
-// Subscriber for receiving follow joint trajectory commands
+// Subscriber for receiving joint trajectories
 ros::Subscriber controlSub;
+
+// Controller for converting trajectories to commands
+control_toolbox::Pid pid;
 
 /*----------------------------------------------------------*\
 | Declarations
@@ -110,20 +113,13 @@ int main(int argc, char** argv)
 
   // Run node
   ros::Rate rate(spinRate);
-  bool waiting = true;
 
   while(node.ok())
   {
-    if (!sensor.ready())
+    if (!sensor.isReady())
     {
       // Wait until we have readings from the encoder
       ROS_INFO("waiting for feedback...");
-    }
-    else if (waiting)
-    {
-      // Wait for trajectory command
-      waiting = false;
-      ROS_INFO("ready");
     }
     else
     {
@@ -165,6 +161,10 @@ void initialize(ros::NodeHandle node)
   // Initialize joint trajectory subscriber
   controlSub = node.subscribe<control_msgs::FollowJointTrajectoryActionGoal>(
     controlTopic, 1, &control);
+
+  // Initialize PID controller
+  if (!pid.init(ros::NodeHandle(node, "pid")))
+    exit(1);
 }
 
 /*----------------------------------------------------------*\
@@ -175,16 +175,24 @@ void playback(ros::Time time)
 {
   if (!trajectory.size()) return;
 
-  ros::Duration elapsed = time - start;
+  ros::Duration period = time - start;
 
-  if (elapsed.toSec() >= trajectory[point].duration)
+  if (period.toSec() >= trajectory[point].duration)
   {
     // Go to the next step
     point = (point + 1) % trajectory.size();
     start = time;
 
-    // Execute command
-    actuator.command(trajectory[point].velocity);
+    // Calculate PID
+    double velocity = trajectory[point].velocity;
+    double position = trajectory[point].position;
+    double positionError = position - sensor.getPosition();
+    double velocityError = velocity - actuator.getVelocity();
+
+    double command = pid.computeCommand(
+      positionError, velocityError, period);
+
+    actuator.command(command);
   }
 }
 

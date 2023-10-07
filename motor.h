@@ -91,17 +91,17 @@ public:
   }
 
 public:
-  inline double velocity() {
+  inline double getVelocity() {
     // Get current velocity
     return m_velocity;
   }
 
-  inline int lpwm() {
+  inline int getLPWM() {
     // Get current LPWM pulse width
     return m_lpwmCommand;
   }
 
-  inline int rpwm() {
+  inline int getRPWM() {
     // Get current RPWM pulse width
     return m_rpwmCommand;
   }

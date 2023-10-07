@@ -83,7 +83,7 @@ public:
   }
 
   encoder(
-    ros::NodeHandle& nh, const std::string& topic, int input, int minReading, int maxReading, double minPos, double maxPos, int filterThreshold, int filterAverage)
+    const std::string& topic, int input, int minReading, int maxReading, double minPos, double maxPos, int filterThreshold, int filterAverage)
     : m_topic(topic)
     , m_filter(filterThreshold, filterAverage)
     , m_input(input)
@@ -95,22 +95,29 @@ public:
   }
 
 public:
-  int reading() const
+  int getReading() const
   {
     // Get current filtered analog reading
     return m_reading;
   }
 
-  double position() const
+  double getPosition() const
   {
     // Get current position mapped from filtered analog reading
     return m_position;
   }
 
-  bool ready() const
+  bool isReady() const
   {
     // Check if we have readings from the encoder
-    return m_position != std::numeric_limits<double>::infinity();
+    if (m_position == std::numeric_limits<double>::infinity())
+      return false;
+
+    // Check if the buffer is filled with readings within threshold of each other
+    if (!m_filter.isStable())
+      return false;
+
+    return true;
   }
 
   void configure()

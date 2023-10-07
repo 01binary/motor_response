@@ -98,7 +98,7 @@ void configure();
 void initialize(ros::NodeHandle node);
 void control(const control_msgs::FollowJointTrajectoryActionGoal::ConstPtr& msg);
 void playback(ros::Time time);
-void record(double elapsed);
+void record(double period);
 
 /*----------------------------------------------------------*\
 | Package entry point
@@ -118,28 +118,27 @@ int main(int argc, char** argv)
   // Run node
   ros::Rate rate(spinRate);
   ros::Time startTime = ros::Time::now();
-  bool waiting = true;
+  bool recording = false;
 
   while(node.ok())
   {
-    if (!sensor.ready())
+    if (!sensor.isReady())
     {
       // Wait until we have readings from the encoder
       ROS_INFO("waiting for feedback...");
     }
-    else if (waiting)
+    else if (!recording)
     {
-      // Initialize playback
-      waiting = false;
+      // Initialize recording and playback
+      recording = true;
       startTime = ros::Time::now();
       stepTime = ros::Time::now();
-      ROS_INFO("ready");
     }
     else
     {
       ros::Time time = ros::Time::now();
 
-      // Play back steps from configuration
+      // Play back step input from configuration or trajectory message
       playback(time);
 
       // Record current command and position
@@ -281,26 +280,26 @@ void control(const control_msgs::FollowJointTrajectoryActionGoal::ConstPtr& msg)
 | Recording
 \*----------------------------------------------------------*/
 
-void record(double elapsed)
+void record(double period)
 {
   if (!outputLog.size()) return;
 
-  logFile << elapsed << ", "
-          << actuator.velocity() << ", "
-          << actuator.lpwm() << ", "
-          << actuator.rpwm() << ", "
-          << sensor.position() << ", "
-          << sensor.reading()
+  logFile << period << ", "
+          << actuator.getVelocity() << ", "
+          << actuator.getLPWM() << ", "
+          << actuator.getRPWM() << ", "
+          << sensor.getPosition() << ", "
+          << sensor.getReading()
           << std::endl;
 
   ROS_INFO(
     "[%d] time %#.4g\tvel %#+.4g\t\tLPWM %3d\tRPWM %3d\tpos %#.4g\treading %4d",
     int(currentStep + 1),
-    elapsed,
-    actuator.velocity(),
-    actuator.lpwm(),
-    actuator.rpwm(),
-    sensor.position(),
-    sensor.reading()
+    period,
+    actuator.getVelocity(),
+    actuator.getLPWM(),
+    actuator.getRPWM(),
+    sensor.getPosition(),
+    sensor.getReading()
   );
 }
