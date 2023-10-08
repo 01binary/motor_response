@@ -70,7 +70,7 @@ std::string joint;
 std::vector<trajectoryPoint> trajectory;
 
 // Current trajectory point
-size_t point = 0;
+size_t point = -1;
 
 // Current trajectory point start time
 ros::Time start;
@@ -171,35 +171,8 @@ void initialize(ros::NodeHandle node)
   // Initialize PID controller
   if (!pid.init(ros::NodeHandle(node, "pid")))
     exit(1);
-}
 
-/*----------------------------------------------------------*\
-| Playback
-\*----------------------------------------------------------*/
-
-void playback(ros::Time time)
-{
-  if (!trajectory.size()) return;
-
-  ros::Duration period = time - start;
-
-  if (period.toSec() >= trajectory[point].duration)
-  {
-    // Go to the next step
-    point = (point + 1) % trajectory.size();
-    start = time;
-
-    // Calculate PID
-    double velocity = trajectory[point].velocity;
-    double position = trajectory[point].position;
-    double positionError = position - sensor.getPosition();
-    double velocityError = velocity - actuator.getVelocity();
-
-    double command = pid.computeCommand(
-      positionError, velocityError, period);
-
-    actuator.command(command);
-  }
+  pid.printValues();
 }
 
 /*----------------------------------------------------------*\
@@ -234,10 +207,53 @@ void control(const control_msgs::FollowJointTrajectoryActionGoal::ConstPtr& msg)
       prevTime = timeFromStart;
     }
 
+    point = -1;
     trajectory = trajectoryPoints;
+
+    ROS_INFO("starting trajectory with %d points", (int)trajectory.size());
   }
   else
   {
     ROS_WARN("joint %s not found in trajectory", joint.c_str());
+  }
+}
+
+/*----------------------------------------------------------*\
+| Playback
+\*----------------------------------------------------------*/
+
+void playback(ros::Time time)
+{
+  if (!trajectory.size()) return;
+
+  ros::Duration period = time - start;
+
+  if (point == -1 || period.toSec() >= trajectory[point].duration)
+  {
+    // Begin playback or go to the next step
+    point = (point + 1) % trajectory.size();
+    start = time;
+
+    // Calculate PID
+    double velocity = trajectory[point].velocity;
+    double position = trajectory[point].position;
+    double positionError = position - sensor.getPosition();
+    double velocityError = velocity - actuator.getVelocity();
+    double command = pid.computeCommand(
+      positionError, velocityError, period);
+
+    ROS_INFO(
+      "[%d] time %#.4g\ttarget pos %#+.4g\tpos %#+.4g\ttarget vel %#+.4g\tvel %#+.4g\tperr %#+.4g\tverr %#+.4g",
+      (int)point,
+      start.toSec(),
+      position,
+      sensor.getPosition(),
+      velocity,
+      actuator.getVelocity(),
+      positionError,
+      velocityError
+    );
+
+    actuator.command(command);
   }
 }

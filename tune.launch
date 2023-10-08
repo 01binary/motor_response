@@ -2,14 +2,14 @@
   <!-- Shared Configuration -->
   <rosparam file="$(find motor_response)/settings.yaml" />
 
-  <!-- Step Inputs -->
-  <rosparam file="$(find motor_response)/steps.yaml" />
+  <!-- PID Configuration -->
+  <rosparam file="$(find motor_response)/pid.yaml" />
 
   <!-- Tool -->
   <node
     name="motor_response"
     pkg="motor_response"
-    type="sample"
+    type="tune"
     required="true"
     output="screen"
   />

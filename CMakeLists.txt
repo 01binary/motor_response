@@ -29,6 +29,12 @@ add_executable(
   sample.cpp
 )
 
+add_executable(
+  tune
+  tune.cpp
+)
+
+
 add_dependencies(
   ${catkin_EXPORTED_TARGETS}
 )
@@ -38,9 +44,22 @@ target_link_libraries(
   ${catkin_LIBRARIES}
 )
 
+target_link_libraries(
+  tune
+  ${catkin_LIBRARIES}
+)
+
 install(
   TARGETS
     sample
+  RUNTIME
+  DESTINATION
+    ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
+
+install(
+  TARGETS
+    tune
   RUNTIME
   DESTINATION
     ${CATKIN_PACKAGE_BIN_DESTINATION}
