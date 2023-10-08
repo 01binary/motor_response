@@ -61,6 +61,8 @@ private:
   // State
   //
 
+  bool m_ready = false;
+
   // Last filtered analog reading
   int m_reading = -1;
 
@@ -71,7 +73,7 @@ private:
   histogramFilter m_filter;
 
   // Subscriber for receiving analog readings from motor absolute encoder
-  ros::Subscriber m_adcSub;
+  ros::Subscriber m_sub;
 
 public:
   //
@@ -91,33 +93,27 @@ public:
     , m_maxReading(maxReading)
     , m_minPos(minPos)
     , m_maxPos(maxPos)
+    , m_ready(false)
   {
   }
 
 public:
+  // Get current filtered analog reading
   int getReading() const
   {
-    // Get current filtered analog reading
     return m_reading;
   }
 
+  // Get current position mapped from filtered analog reading
   double getPosition() const
   {
-    // Get current position mapped from filtered analog reading
     return m_position;
   }
 
+  // Determine if the encoder is ready to provide readings
   bool isReady() const
   {
-    // Check if we have readings from the encoder
-    if (m_position == std::numeric_limits<double>::infinity())
-      return false;
-
-    // Check if the buffer is filled with readings within threshold of each other
-    if (!m_filter.isStable())
-      return false;
-
-    return true;
+    return m_ready;
   }
 
   void configure()
@@ -140,7 +136,7 @@ public:
   void initialize(ros::NodeHandle& node)
   {
     // Subscribe to analog readings
-    m_adcSub = node.subscribe<str1ker::Adc>(
+    m_sub = node.subscribe<str1ker::Adc>(
       m_topic, QUEUE_SIZE, &encoder::feedback, this);
   }
 
@@ -152,5 +148,11 @@ public:
     // Re-map to position
     m_position = mapZero(
       (double)m_reading, (double)m_minReading, (double)m_maxReading, m_minPos, m_maxPos);
+
+    // Check if the position is ready to be used
+    if (!m_ready)
+    {
+      m_ready = m_filter.isStable();
+    }
   }
 };

@@ -63,6 +63,7 @@ public:
       , m_max(-1)
       , m_maxCount(-1)
       , m_buffer(average)
+      , m_next(0)
   {
   }
 
@@ -124,7 +125,7 @@ public:
     return true;
   }
 
-  void debug()
+  void debug() const
   {
     std::string values;
     std::string separators;

@@ -137,12 +137,13 @@ int main(int argc, char** argv)
     else
     {
       ros::Time time = ros::Time::now();
+      ros::Duration period = time - startTime;
 
       // Play back step input from configuration or trajectory message
       playback(time);
 
       // Record current command and position
-      record((time - startTime).toSec());
+      record(period.toSec());
     }
 
     ros::spinOnce();
@@ -195,6 +196,12 @@ void initialize(ros::NodeHandle node)
     controlSub = node.subscribe<control_msgs::FollowJointTrajectoryActionGoal>(
       controlTopic, 1, &control);
   }
+
+  // Initialize sensor
+  sensor.initialize(node);
+
+  // Initialize actuator
+  actuator.initialize(node);
 
   // Open the log file if specified
   if (outputLog.size())

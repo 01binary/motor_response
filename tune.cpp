@@ -82,7 +82,7 @@ motor actuator;
 encoder sensor;
 
 // Subscriber for receiving joint trajectories
-ros::Subscriber controlSub;
+ros::Subscriber sub;
 
 // Controller for converting trajectories to commands
 control_toolbox::Pid pid;
@@ -159,8 +159,14 @@ void configure()
 void initialize(ros::NodeHandle node)
 {
   // Initialize joint trajectory subscriber
-  controlSub = node.subscribe<control_msgs::FollowJointTrajectoryActionGoal>(
+  sub = node.subscribe<control_msgs::FollowJointTrajectoryActionGoal>(
     controlTopic, 1, &control);
+
+  // Initialize sensor
+  sensor.initialize(node);
+
+  // Initialize actuator
+  actuator.initialize(node);
 
   // Initialize PID controller
   if (!pid.init(ros::NodeHandle(node, "pid")))
