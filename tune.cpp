@@ -70,10 +70,16 @@ std::string joint;
 std::vector<trajectoryPoint> trajectory;
 
 // Current trajectory point
-size_t point = -1;
+int point = -1;
 
 // Current trajectory point start time
 ros::Time start;
+
+// Last loop time
+ros::Time last;
+
+// Done executing trajectory
+bool done = true;
 
 // Actuator for sending velocity commands
 motor actuator;
@@ -209,6 +215,7 @@ void control(const control_msgs::FollowJointTrajectoryActionGoal::ConstPtr& msg)
 
     point = -1;
     trajectory = trajectoryPoints;
+    done = false;
 
     ROS_INFO("starting trajectory with %d points", (int)trajectory.size());
   }
@@ -224,36 +231,55 @@ void control(const control_msgs::FollowJointTrajectoryActionGoal::ConstPtr& msg)
 
 void playback(ros::Time time)
 {
-  if (!trajectory.size()) return;
+  if (!trajectory.size() || done) return;
 
-  ros::Duration period = time - start;
+  ros::Duration elapsed = time - start;
 
-  if (point == -1 || period.toSec() >= trajectory[point].duration)
+  if (point == -1 || elapsed.toSec() >= trajectory[point].duration)
   {
-    // Begin playback or go to the next step
-    point = (point + 1) % trajectory.size();
-    start = time;
+    point++;
 
-    // Calculate PID
-    double velocity = trajectory[point].velocity;
-    double position = trajectory[point].position;
-    double positionError = position - sensor.getPosition();
-    double velocityError = velocity - actuator.getVelocity();
-    double command = pid.computeCommand(
-      positionError, velocityError, period);
-
-    ROS_INFO(
-      "[%d] time %#.4g\ttarget pos %#+.4g\tpos %#+.4g\ttarget vel %#+.4g\tvel %#+.4g\tperr %#+.4g\tverr %#+.4g",
-      (int)point,
-      start.toSec(),
-      position,
-      sensor.getPosition(),
-      velocity,
-      actuator.getVelocity(),
-      positionError,
-      velocityError
-    );
-
-    actuator.command(command);
+    if (point == 0)
+    {
+      // Begin trajectory
+      start = time;
+      last = time;
+      done = false;
+    }
+    else if (point >= trajectory.size())
+    {
+      // End trajectory
+      actuator.command(0.0);
+      ROS_INFO("trajectory done");
+      point = -1;
+      done = true;
+    }
   }
+
+  // Execute trajectory
+  ros::Duration period = time - last;
+
+  // Calculate PID
+  double velocity = trajectory[point].velocity;
+  double position = trajectory[point].position;
+  double positionError = position - sensor.getPosition();
+  double velocityError = velocity - actuator.getVelocity();
+  double command = pid.computeCommand(positionError, velocityError, period);
+
+  ROS_INFO(
+    "[%d] time %#.4g\tper %#.4g\ttarget pos %#+.4g\tpos %#+.4g\ttarget vel %#+.4g\tvel %#+.4g\tperr %#+.4g\tverr %#+.4g",
+    int(point),
+    elapsed.toSec(),
+    period.toSec(),
+    position,
+    sensor.getPosition(),
+    velocity,
+    actuator.getVelocity(),
+    positionError,
+    velocityError
+  );
+
+  actuator.command(command);
+
+  last = time;
 }
