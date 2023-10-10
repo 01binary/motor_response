@@ -103,7 +103,9 @@ control_toolbox::Pid pid;
 void configure();
 void initialize(ros::NodeHandle node);
 void control(const control_msgs::FollowJointTrajectoryActionGoal::ConstPtr& msg);
-void playback(ros::Time time);
+void beginTrajectory(std::vector<trajectoryPoint> points);
+void endTrajectory();
+void runTrajectory(ros::Time time);
 
 /*----------------------------------------------------------*\
 | Package entry point
@@ -133,7 +135,7 @@ int main(int argc, char** argv)
     else
     {
       // Execute trajectory
-      playback(ros::Time::now());
+      runTrajectory(ros::Time::now());
     }
 
     ros::spinOnce();
@@ -217,11 +219,7 @@ void control(const control_msgs::FollowJointTrajectoryActionGoal::ConstPtr& msg)
       prevTime = timeFromStart;
     }
 
-    point = -1;
-    trajectory = trajectoryPoints;
-    done = false;
-
-    ROS_INFO("starting trajectory with %d points", (int)trajectory.size());
+    beginTrajectory(trajectory);
   }
   else
   {
@@ -230,44 +228,52 @@ void control(const control_msgs::FollowJointTrajectoryActionGoal::ConstPtr& msg)
 }
 
 /*----------------------------------------------------------*\
-| Playback
+| Trajectory playback
 \*----------------------------------------------------------*/
 
-void playback(ros::Time time)
+void beginTrajectory(ros::Time time, std::vector<trajectoryPoint> points)
+{
+  ROS_INFO("starting trajectory with %d points", (int)points.size());
+
+  start = time;
+  point = 0;
+  trajectory = trajectoryPoints;
+  done = false;
+}
+
+void endTrajectory()
+{
+  ROS_INFO("trajectory completed");
+
+  actuator.command(0.0);
+  done = true;
+}
+
+void runTrajectory(ros::Time time)
 {
   if (!trajectory.size() || done) return;
 
   ros::Duration elapsed = time - start;
+  bool isLast = point == int(trajectory.size()) - 1;
 
-  if (point == -1 || elapsed.toSec() >= trajectory[point].duration)
+  if (elapsed.toSec() >= trajectory[point].duration && !isLast)
   {
     point++;
-
-    if (point == 0)
-    {
-      // Begin trajectory
-      start = time;
-      last = time;
-      done = false;
-    }
-    else if (point >= trajectory.size())
-    {
-      // End trajectory
-      actuator.command(0.0);
-      ROS_INFO("trajectory done");
-      point = -1;
-      done = true;
-    }
   }
 
-  // Execute trajectory
   ros::Duration period = time - last;
 
-  // Calculate PID
   double velocity = trajectory[point].velocity;
   double position = trajectory[point].position;
   double positionError = position - sensor.getPosition();
   double velocityError = velocity - actuator.getVelocity();
+
+  if (positionError <= tolerance && isLast)
+  {
+    endTrajectory();
+    return;
+  }
+
   double command = pid.computeCommand(positionError, velocityError, period);
 
   ROS_INFO(
