@@ -62,6 +62,9 @@ std::string controlTopic;
 // The joint to watch for in trajectory commands
 std::string joint;
 
+// Position tolerance
+double tolerance;
+
 //
 // State
 //
@@ -150,6 +153,7 @@ void configure()
   ros::param::get("rate", spinRate);
   ros::param::get("controlTopic", controlTopic);
   ros::param::get("joint", joint);
+  ros::param::get("tolerance", tolerance);
 
   // Read actuator settings
   actuator.configure();

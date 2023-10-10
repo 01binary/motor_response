@@ -1,9 +1,9 @@
 <launch>
   <!-- Shared Configuration -->
-  <rosparam file="$(find motor_response)/settings.yaml" />
+  <rosparam file="$(find motor_response)/config/settings.yaml" />
 
   <!-- PID Configuration -->
-  <rosparam file="$(find motor_response)/pid.yaml" />
+  <rosparam file="$(find motor_response)/config/pid.yaml" />
 
   <!-- Tool -->
   <node

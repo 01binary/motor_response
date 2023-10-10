@@ -1,9 +1,9 @@
 <launch>
   <!-- Shared Configuration -->
-  <rosparam file="$(find motor_response)/settings.yaml" />
+  <rosparam file="$(find motor_response)/config/settings.yaml" />
 
   <!-- Step Inputs -->
-  <rosparam file="$(find motor_response)/steps.yaml" />
+  <rosparam file="$(find motor_response)/config/steps.yaml" />
 
   <!-- Tool -->
   <node

@@ -26,12 +26,12 @@ include_directories(
 
 add_executable(
   sample
-  sample.cpp
+  src/sample.cpp
 )
 
 add_executable(
   tune
-  tune.cpp
+  src/tune.cpp
 )
 
 
