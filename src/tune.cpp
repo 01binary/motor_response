@@ -219,7 +219,7 @@ void control(const control_msgs::FollowJointTrajectoryActionGoal::ConstPtr& msg)
       prevTime = timeFromStart;
     }
 
-    beginTrajectory(ros::Time::now(), trajectory);
+    beginTrajectory(ros::Time::now(), trajectoryPoints);
   }
   else
   {
@@ -268,7 +268,7 @@ void runTrajectory(ros::Time time)
   double positionError = position - sensor.getPosition();
   double velocityError = velocity - actuator.getVelocity();
 
-  if (positionError <= tolerance && isLast)
+  if (abs(positionError) <= tolerance && isLast)
   {
     endTrajectory();
   }

@@ -3,22 +3,21 @@ rate: 40
 outputTopic: /robot/pwm
 lpwm: 0
 rpwm: 1
-minPwm: 512
+minPwm: 520
 maxPwm: 4096
-# base motor has 3.14160 rad/s at max pwm
 minVelocity: 0.0
 maxVelocity: 1.0
 # input
 inputTopic: /robot/adc
 input: 0
+minReading: 293
+maxReading: 790
+minPos: -1.4929
+maxPos: 1.4929
+threshold: 8
+average: 16
 # control
 controlTopic: /arm_velocity_controller/follow_joint_trajectory/goal
 joint: base
-# base: 522 middle, 293 right, 790 left
-minReading: 0
-maxReading: 1023
-minPos: 0
-maxPos: 1
-threshold: 8
-average: 16
+# recording
 log: /home/val/catkin_ws/response.csv
