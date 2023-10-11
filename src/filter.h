@@ -138,9 +138,9 @@ public:
       counts += std::to_string(bin.second) + "\t|\t";
     }
 
-    ROS_INFO(values.c_str());
-    ROS_INFO(separators.c_str());
-    ROS_INFO(counts.c_str());
+    ROS_INFO("%s", values.c_str());
+    ROS_INFO("%s", separators.c_str());
+    ROS_INFO("%s", counts.c_str());
   }
 
 private:

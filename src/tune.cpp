@@ -62,9 +62,6 @@ std::string controlTopic;
 // The joint to watch for in trajectory commands
 std::string joint;
 
-// Position tolerance
-double tolerance;
-
 //
 // State
 //
@@ -74,6 +71,9 @@ std::vector<trajectoryPoint> trajectory;
 
 // Current trajectory point
 int point = -1;
+
+// Current trajectory tolerance
+double goalTolerance;
 
 // Current trajectory point start time
 ros::Time startTime;
@@ -109,7 +109,7 @@ control_toolbox::Pid pid;
 void configure();
 void initialize(ros::NodeHandle node);
 void control(const control_msgs::FollowJointTrajectoryActionGoal::ConstPtr& msg);
-void beginTrajectory(ros::Time time, std::vector<trajectoryPoint> points);
+void beginTrajectory(ros::Time time, std::vector<trajectoryPoint> points, double tolerance);
 void endTrajectory();
 void runTrajectory(ros::Time time);
 
@@ -161,7 +161,6 @@ void configure()
   ros::param::get("rate", spinRate);
   ros::param::get("controlTopic", controlTopic);
   ros::param::get("joint", joint);
-  ros::param::get("tolerance", tolerance);
 
   // Read actuator settings
   actuator.configure();
@@ -212,6 +211,7 @@ void control(const control_msgs::FollowJointTrajectoryActionGoal::ConstPtr& msg)
   {
     // Parse trajectory
     size_t jointIndex = jointPos - goalTrajectory.joint_names.cbegin();
+    auto tolerance = msg->goal.goal_tolerance[jointIndex];
     std::vector<trajectoryPoint> trajectoryPoints(goalTrajectory.points.size());
     double prevTime = 0.0;
 
@@ -225,7 +225,7 @@ void control(const control_msgs::FollowJointTrajectoryActionGoal::ConstPtr& msg)
       prevTime = timeFromStart;
     }
 
-    beginTrajectory(ros::Time::now(), trajectoryPoints);
+    beginTrajectory(ros::Time::now(), trajectoryPoints, tolerance.position);
   }
   else
   {
@@ -237,15 +237,16 @@ void control(const control_msgs::FollowJointTrajectoryActionGoal::ConstPtr& msg)
 | Trajectory playback
 \*----------------------------------------------------------*/
 
-void beginTrajectory(ros::Time time, std::vector<trajectoryPoint> points)
+void beginTrajectory(ros::Time time, std::vector<trajectoryPoint> points, double tolerance)
 {
-  ROS_INFO("starting trajectory with %d points", (int)points.size());
-
-  // TODO: take tolerance from the message
+  ROS_INFO(
+    "starting trajectory with %d points %g tolerance",
+    (int)points.size(), tolerance);
 
   startTime = time;
   point = 0;
   trajectory = points;
+  goalTolerance = tolerance;
   done = false;
 }
 
@@ -276,7 +277,7 @@ void runTrajectory(ros::Time time)
   double positionError = position - sensor.getPosition();
   double velocityError = velocity - actuator.getVelocity();
 
-  if (abs(positionError) <= tolerance && isLast)
+  if (abs(positionError) <= goalTolerance && isLast)
   {
     endTrajectory();
   }
