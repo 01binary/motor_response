@@ -76,10 +76,16 @@ std::vector<trajectoryPoint> trajectory;
 int point = -1;
 
 // Current trajectory point start time
-ros::Time start;
+ros::Time startTime;
 
 // Last loop time
-ros::Time last;
+ros::Time lastTime;
+
+// Last command
+double lastCommand = 0.0;
+
+// Last position
+double lastPos = 0.0;
 
 // Done executing trajectory
 bool done = true;
@@ -235,7 +241,9 @@ void beginTrajectory(ros::Time time, std::vector<trajectoryPoint> points)
 {
   ROS_INFO("starting trajectory with %d points", (int)points.size());
 
-  start = time;
+  // TODO: take tolerance from the message
+
+  startTime = time;
   point = 0;
   trajectory = points;
   done = false;
@@ -253,7 +261,7 @@ void runTrajectory(ros::Time time)
 {
   if (!trajectory.size() || done) return;
 
-  ros::Duration elapsed = time - start;
+  ros::Duration elapsed = time - startTime;
   bool isLast = point == int(trajectory.size()) - 1;
 
   if (elapsed.toSec() >= trajectory[point].duration && !isLast)
@@ -261,7 +269,7 @@ void runTrajectory(ros::Time time)
     point++;
   }
 
-  ros::Duration period = time - last;
+  ros::Duration period = time - lastTime;
 
   double velocity = trajectory[point].velocity;
   double position = trajectory[point].position;
@@ -289,8 +297,16 @@ void runTrajectory(ros::Time time)
       velocityError
     );
 
+    if (lastCommand < 0.0 && command >= 0.0 || lastCommand >= 0.0 && command < 0.0)
+      ROS_INFO("direction change");
+
+    // TODO: prevent direction change, just keep last vel, if moving toward the correct direction
+
     actuator.command(command);
+
+
+    lastCommand = command;
   }
 
-  last = time;
+  lastTime = time;
 }
