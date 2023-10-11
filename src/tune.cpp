@@ -103,7 +103,7 @@ control_toolbox::Pid pid;
 void configure();
 void initialize(ros::NodeHandle node);
 void control(const control_msgs::FollowJointTrajectoryActionGoal::ConstPtr& msg);
-void beginTrajectory(std::vector<trajectoryPoint> points);
+void beginTrajectory(ros::Time time, std::vector<trajectoryPoint> points);
 void endTrajectory();
 void runTrajectory(ros::Time time);
 
@@ -219,7 +219,7 @@ void control(const control_msgs::FollowJointTrajectoryActionGoal::ConstPtr& msg)
       prevTime = timeFromStart;
     }
 
-    beginTrajectory(trajectory);
+    beginTrajectory(ros::Time::now(), trajectory);
   }
   else
   {
@@ -237,7 +237,7 @@ void beginTrajectory(ros::Time time, std::vector<trajectoryPoint> points)
 
   start = time;
   point = 0;
-  trajectory = trajectoryPoints;
+  trajectory = points;
   done = false;
 }
 
@@ -271,25 +271,26 @@ void runTrajectory(ros::Time time)
   if (positionError <= tolerance && isLast)
   {
     endTrajectory();
-    return;
   }
+  else
+  {
+    double command = pid.computeCommand(positionError, velocityError, period);
 
-  double command = pid.computeCommand(positionError, velocityError, period);
+    ROS_INFO(
+      "[%d] time %#.4g\tper %#.4g\ttarget pos %#+.4g\tpos %#+.4g\ttarget vel %#+.4g\tvel %#+.4g\tperr %#+.4g\tverr %#+.4g",
+      int(point),
+      elapsed.toSec(),
+      period.toSec(),
+      position,
+      sensor.getPosition(),
+      velocity,
+      actuator.getVelocity(),
+      positionError,
+      velocityError
+    );
 
-  ROS_INFO(
-    "[%d] time %#.4g\tper %#.4g\ttarget pos %#+.4g\tpos %#+.4g\ttarget vel %#+.4g\tvel %#+.4g\tperr %#+.4g\tverr %#+.4g",
-    int(point),
-    elapsed.toSec(),
-    period.toSec(),
-    position,
-    sensor.getPosition(),
-    velocity,
-    actuator.getVelocity(),
-    positionError,
-    velocityError
-  );
-
-  actuator.command(command);
+    actuator.command(command);
+  }
 
   last = time;
 }
