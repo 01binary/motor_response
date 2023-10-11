@@ -1,5 +1,5 @@
 /*
-  histogramFilter.h
+  filter.h
 
   Simple histogram and moving average filter for analog input
   Created 09/20/2023
@@ -17,10 +17,10 @@
 #include <vector>
 
 /*----------------------------------------------------------*\
-| histogramFilter class
+| filter class
 \*----------------------------------------------------------*/
 
-class histogramFilter
+class filter
 {
 private:
   // Sample with the smallest number of occurrences
@@ -55,7 +55,7 @@ public:
   // Constructor
   //
 
-  histogramFilter(int threshold, int average)
+  filter(int threshold, int average)
       : m_threshold(threshold)
       , m_average(average)
       , m_min(-1)

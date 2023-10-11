@@ -13,7 +13,7 @@
 \*----------------------------------------------------------*/
 
 #include <str1ker/Adc.h>
-#include "histogramFilter.h"
+#include "filter.h"
 #include "utilities.h"
 
 /*----------------------------------------------------------*\
@@ -70,7 +70,7 @@ private:
   double m_position = std::numeric_limits<double>::infinity();
 
   // Filter for analog input
-  histogramFilter m_filter;
+  filter m_filter;
 
   // Subscriber for receiving analog readings from motor absolute encoder
   ros::Subscriber m_sub;
@@ -85,7 +85,14 @@ public:
   }
 
   encoder(
-    const std::string& topic, int input, int minReading, int maxReading, double minPos, double maxPos, int filterThreshold, int filterAverage)
+    const std::string& topic,
+    int input,
+    int minReading,
+    int maxReading,
+    double minPos,
+    double maxPos,
+    int filterThreshold,
+    int filterAverage)
     : m_topic(topic)
     , m_filter(filterThreshold, filterAverage)
     , m_input(input)
@@ -130,7 +137,7 @@ public:
     ros::param::get("threshold", threshold);
     ros::param::get("average", average);
 
-    m_filter = histogramFilter(threshold, average);
+    m_filter = filter(threshold, average);
   }
 
   void initialize(ros::NodeHandle& node)
