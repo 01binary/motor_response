@@ -76,6 +76,9 @@ std::string trajectoryTopic;
 // Input topic for listening to position commands
 std::string commandTopic;
 
+// Output topic for reporting position
+std::string feedbackTopic;
+
 // The joint to watch for in trajectory commands
 std::string joint;
 
@@ -113,8 +116,8 @@ ros::Time lastTime;
 // Last command
 double lastCommand = 0.0;
 
-// Last position
-double lastPos = 0.0;
+// Ready to execute trajectories
+bool ready = false;
 
 // Done executing trajectory
 bool done = true;
@@ -130,6 +133,9 @@ ros::Subscriber trajSub;
 
 // Subscriber for receiving joint command
 ros::Subscriber cmdSub;
+
+// Publisher for reporting current position
+ros::Publisher feedbackPub;
 
 // Controller for converting trajectories to commands
 control_toolbox::Pid pid;
@@ -164,12 +170,15 @@ int main(int argc, char** argv)
   // Run node
   ros::Rate rate(spinRate);
 
+  ROS_INFO("waiting for feedback...");
+
   while(node.ok())
   {
-    if (!sensor.isReady())
+    if (sensor.isReady() != ready)
     {
       // Wait until we have readings from the encoder
-      ROS_INFO("waiting for feedback...");
+      ROS_INFO("ready");
+      ready = true;
     }
     else
     {
@@ -194,6 +203,7 @@ void configure()
   ros::param::get("rate", spinRate);
   ros::param::get("trajectoryTopic", trajectoryTopic);
   ros::param::get("commandTopic", commandTopic);
+  ros::param::get("feedbackTopic", feedbackTopic);
   ros::param::get("joint", joint);
   ros::param::get("tolerance", defaultTolerance);
 
@@ -256,6 +266,9 @@ void initialize(ros::NodeHandle node)
   // Initialize joint command subscriber
   trajSub = node.subscribe<std_msgs::Float64>(
     commandTopic, 1, &commandControl);
+
+  // Initialize joint position publisher
+  feedbackPub = node.advertise<std_msgs::Float64>(feedbackTopic, 1);
 
   // Initialize sensor
   sensor.initialize(node);
@@ -361,11 +374,13 @@ void endTrajectory()
 
 void runTrajectory(ros::Time time)
 {
+  // Stopped or no trajectory
   if (!trajectory.size() || done)
   {
     return;
   }
 
+  // Advance to next trajectory point
   ros::Duration elapsed = time - startTime;
   bool isLast = point == int(trajectory.size()) - 1;
 
@@ -374,17 +389,23 @@ void runTrajectory(ros::Time time)
     point++;
   }
 
+  // Publish current position
+  double currentPosition = sensor.getPosition();
+  std_msgs::Float64 currentPositionMessage;
+  currentPositionMessage.data = currentPosition;
+  feedbackPub.publish(currentPositionMessage);
+
   // Mimic the behavior of joint_position_controller from ros_controllers
   ros::Duration period = time - lastTime;
   double velocity = trajectory[point].velocity;
   double position = trajectory[point].position;
   double velocityError = velocity - actuator.getVelocity();
   double positionError;
-  
+
   if (jointType == REVOLUTE)
   {
     angles::shortest_angular_distance_with_large_limits(
-      sensor.getPosition(),
+      currentPosition,
       position,
       lowerLimit,
       upperLimit,
@@ -392,7 +413,7 @@ void runTrajectory(ros::Time time)
   }
   else if (jointType == PRISMATIC)
   {
-    positionError = position - sensor.getPosition();
+    positionError = position - currentPosition;
   }
 
   if (abs(positionError) <= goalTolerance && isLast)
@@ -409,7 +430,7 @@ void runTrajectory(ros::Time time)
     elapsed.toSec(),
     period.toSec(),
     position,
-    sensor.getPosition(),
+    currentPosition,
     velocity,
     actuator.getVelocity(),
     positionError,
@@ -418,9 +439,10 @@ void runTrajectory(ros::Time time)
 
   if (point > 0 &&
       !isSameSign(command, lastCommand) &&
-      isSameSign(lastCommand, trajectory.back().position - sensor.getPosition()))
+      isSameSign(lastCommand, trajectory.back().position - currentPosition))
   {
-    // Do not reverse direction if we missed a waypoint as long as we're moving toward goal
+    // Do not reverse direction if we missed a waypoint
+    // as long as we're moving toward the final goal
     ROS_WARN("prevented reversing");
     return;
   }
