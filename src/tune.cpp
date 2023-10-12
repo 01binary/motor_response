@@ -284,6 +284,7 @@ void runTrajectory(ros::Time time)
   else
   {
     double command = pid.computeCommand(positionError, velocityError, period);
+    bool isReversing = lastCommand < 0.0 && command >= 0.0 || lastCommand >= 0.0 && command < 0.0;
 
     ROS_INFO(
       "[%d] time %#.4g\tper %#.4g\ttarget pos %#+.4g\tpos %#+.4g\ttarget vel %#+.4g\tvel %#+.4g\tperr %#+.4g\tverr %#+.4g",
@@ -298,10 +299,19 @@ void runTrajectory(ros::Time time)
       velocityError
     );
 
-    if (lastCommand < 0.0 && command >= 0.0 || lastCommand >= 0.0 && command < 0.0)
-      ROS_INFO("direction change");
+    if (isReversing)
+    {
+      // Prevent reversing if moving toward the end of trajectory
+      double direction = trajectory.back().position - sensor.getPosition();
+      bool isSameDirection =
+        (lastCommand < 0.0 && direction < 0.0) ||
+        (lastCommand >= 0.0 && direction >= 0.0);
 
-    // TODO: prevent direction change, just keep last vel, if moving toward the correct direction
+      if (isSameDirection)
+      {
+        command = velocity;
+      }
+    }
 
     actuator.command(command);
 
