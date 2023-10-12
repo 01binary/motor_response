@@ -418,6 +418,13 @@ void runTrajectory(ros::Time time)
 
   if (abs(positionError) <= goalTolerance && isLast)
   {
+    ROS_INFO(
+      "%g within %g of %g (tolerance %g)",
+      currentPosition,
+      positionError,
+      position,
+      goalTolerance);
+
     endTrajectory();
     return;
   }

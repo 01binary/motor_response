@@ -18,6 +18,7 @@ threshold: 8
 average: 16
 # control
 trajectoryTopic: /arm_velocity_controller/follow_joint_trajectory/goal
+feedbackTopic: /tune/feedback
 commandTopic: /tune/command
 joint: base
 # recording
