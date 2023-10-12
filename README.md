@@ -69,6 +69,12 @@ roslaunch motor_response tune.launch
 
 Configuration settings are in `/config/settings.yaml` and `/config/pid.yaml`.
 
+To send a position command:
+
+```
+rostopic pub /tune/command std_msgs/Float64 'data: 0.0' -1
+```
+
 ## Settings
 
 Shared settings include:

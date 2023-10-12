@@ -27,6 +27,8 @@
 #include <std_msgs/Float64.h>
 #include <control_toolbox/pid.h>
 #include <control_msgs/FollowJointTrajectoryActionGoal.h>
+#include <angles/angles.h>
+#include <urdf/model.h>
 
 //
 // Helpers
@@ -35,6 +37,16 @@
 #include "motor.h"
 #include "encoder.h"
 #include "utilities.h"
+
+/*----------------------------------------------------------*\
+| Constants
+\*----------------------------------------------------------*/
+
+enum supportedJointTypes
+{
+  REVOLUTE = 1,
+  PRISMATIC = 3
+};
 
 /*----------------------------------------------------------*\
 | Types
@@ -66,6 +78,15 @@ std::string commandTopic;
 
 // The joint to watch for in trajectory commands
 std::string joint;
+
+// The joint type extracted from robot_description
+supportedJointTypes jointType = REVOLUTE;
+
+// Upper joint limit extracted from robot_description
+double upperLimit;
+
+// Lower joint limit extracted form robot_description
+double lowerLimit;
 
 // The default goal position tolerance
 double defaultTolerance;
@@ -181,6 +202,45 @@ void configure()
 
   // Read sensor settings
   sensor.configure();
+
+  // Read joint settings
+  urdf::Model urdf;
+
+  if (urdf.initParam("robot_description"))
+  {
+    auto jointDescription = urdf.getJoint(joint);
+
+    if (jointDescription)
+    {
+      if (jointDescription->type == urdf::Joint::REVOLUTE)
+      {
+        ROS_INFO("joint %s is revolute", joint.c_str());
+        jointType = REVOLUTE;
+      }
+      else if (jointDescription->type == urdf::Joint::PRISMATIC)
+      {
+        ROS_INFO("joint %s is prismatic", joint.c_str());
+        jointType = PRISMATIC;
+      }
+      else
+      {
+        ROS_WARN("joint %s is not revolute or prismatic", joint.c_str());
+      }
+
+      upperLimit = jointDescription->limits->upper;
+      lowerLimit = jointDescription->limits->lower;
+    }
+    else
+    {
+      ROS_WARN("joint %s not found in robot description", joint.c_str());
+    }
+  }
+  else
+  {
+    jointType = REVOLUTE;
+    lowerLimit = sensor.getMin();
+    upperLimit = sensor.getMax();
+  }
 }
 
 /*----------------------------------------------------------*\
@@ -280,7 +340,9 @@ void beginTrajectory(ros::Time time, std::vector<trajectoryPoint> points, double
 {
   ROS_INFO(
     "starting trajectory with %d points %g tolerance",
-    (int)points.size(), tolerance);
+    (int)points.size(),
+    tolerance
+  );
 
   startTime = time;
   point = 0;
@@ -312,12 +374,26 @@ void runTrajectory(ros::Time time)
     point++;
   }
 
+  // Mimic the behavior of joint_position_controller from ros_controllers
   ros::Duration period = time - lastTime;
-
   double velocity = trajectory[point].velocity;
   double position = trajectory[point].position;
-  double positionError = position - sensor.getPosition();
   double velocityError = velocity - actuator.getVelocity();
+  double positionError;
+  
+  if (jointType == REVOLUTE)
+  {
+    angles::shortest_angular_distance_with_large_limits(
+      sensor.getPosition(),
+      position,
+      lowerLimit,
+      upperLimit,
+      positionError);
+  }
+  else if (jointType == PRISMATIC)
+  {
+    positionError = position - sensor.getPosition();
+  }
 
   if (abs(positionError) <= goalTolerance && isLast)
   {
@@ -340,21 +416,13 @@ void runTrajectory(ros::Time time)
     velocityError
   );
 
-  if (!isSameSign(command, lastCommand) && point > 0)
+  if (point > 0 &&
+      !isSameSign(command, lastCommand) &&
+      isSameSign(lastCommand, trajectory.back().position - sensor.getPosition()))
   {
-    double direction = trajectory.back().position - sensor.getPosition();
-    ROS_WARN(
-      "detected reverse: to get to %g from %g we need %g",
-      trajectory.back().position,
-      sensor.getPosition(),
-      direction
-    );
-
-    if (isSameSign(lastCommand, direction))
-    {
-      ROS_WARN("prevented reversing, set %g instead of %g", velocity, command);
-      command = velocity;
-    }
+    // Do not reverse direction if we missed a waypoint as long as we're moving toward goal
+    ROS_WARN("prevented reversing");
+    return;
   }
 
   actuator.command(command);

@@ -28,6 +28,11 @@ inline double clampZero(double value, double min, double max)
   return value;
 }
 
+inline double map(double value, double min, double max, double targetMin, double targetMax)
+{
+  return (value - min) / (max - min) * (targetMax - targetMin) + targetMin;
+}
+
 inline double mapZero(double value, double min, double max, double targetMin, double targetMax)
 {
   if (!isZero(value))

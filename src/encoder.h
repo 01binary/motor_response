@@ -106,15 +106,27 @@ public:
 
 public:
   // Get current filtered analog reading
-  int getReading() const
+  inline int getReading() const
   {
     return m_reading;
   }
 
   // Get current position mapped from filtered analog reading
-  double getPosition() const
+  inline double getPosition() const
   {
     return m_position;
+  }
+
+  // Get minimum position
+  inline double getMin() const
+  {
+    return m_minPos;
+  }
+
+  // Get maximum position
+  inline double getMax() const
+  {
+    return m_maxPos;
   }
 
   // Determine if the encoder is ready to provide readings
@@ -153,7 +165,7 @@ public:
     m_reading = m_filter(msg->adc[m_input]);
 
     // Re-map to position
-    m_position = mapZero(
+    m_position = map(
       (double)m_reading, (double)m_minReading, (double)m_maxReading, m_minPos, m_maxPos);
 
     // Check if the position is ready to be used
