@@ -59,7 +59,7 @@ struct step
 int spinRate;
 
 // Input topic for listening to trajectory commands
-std::string controlTopic;
+std::string trajectoryTopic;
 
 // The joint to watch for in trajectory commands
 std::string joint;
@@ -161,7 +161,7 @@ void configure()
 {
   // Read playback and control settings
   ros::param::get("rate", spinRate);
-  ros::param::get("controlTopic", controlTopic);
+  ros::param::get("trajectoryTopic", trajectoryTopic);
   ros::param::get("joint", joint);
   ros::param::get("log", outputLog);
 
@@ -191,10 +191,10 @@ void configure()
 void initialize(ros::NodeHandle node)
 {
   // Initialize joint trajectory subscriber if specified
-  if (controlTopic.size())
+  if (trajectoryTopic.size())
   {
     controlSub = node.subscribe<control_msgs::FollowJointTrajectoryActionGoal>(
-      controlTopic, 1, &control);
+      trajectoryTopic, 1, &control);
   }
 
   // Initialize sensor

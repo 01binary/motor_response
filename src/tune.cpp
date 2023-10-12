@@ -24,6 +24,7 @@
 //
 
 #include <ros/ros.h>
+#include <std_msgs/Float64.h>
 #include <control_toolbox/pid.h>
 #include <control_msgs/FollowJointTrajectoryActionGoal.h>
 
@@ -58,7 +59,10 @@ struct trajectoryPoint
 int spinRate;
 
 // Input topic for listening to trajectory commands
-std::string controlTopic;
+std::string trajectoryTopic;
+
+// Input topic for listening to position commands
+std::string commandTopic;
 
 // The joint to watch for in trajectory commands
 std::string joint;
@@ -101,7 +105,10 @@ motor actuator;
 encoder sensor;
 
 // Subscriber for receiving joint trajectories
-ros::Subscriber sub;
+ros::Subscriber trajSub;
+
+// Subscriber for receiving joint command
+ros::Subscriber cmdSub;
 
 // Controller for converting trajectories to commands
 control_toolbox::Pid pid;
@@ -112,7 +119,8 @@ control_toolbox::Pid pid;
 
 void configure();
 void initialize(ros::NodeHandle node);
-void control(const control_msgs::FollowJointTrajectoryActionGoal::ConstPtr& msg);
+void commandControl(const std_msgs::Float64::ConstPtr& msg);
+void trajectoryControl(const control_msgs::FollowJointTrajectoryActionGoal::ConstPtr& msg);
 void beginTrajectory(ros::Time time, std::vector<trajectoryPoint> points, double tolerance);
 void endTrajectory();
 void runTrajectory(ros::Time time);
@@ -163,7 +171,8 @@ void configure()
 {
   // Read control settings
   ros::param::get("rate", spinRate);
-  ros::param::get("controlTopic", controlTopic);
+  ros::param::get("trajectoryTopic", trajectoryTopic);
+  ros::param::get("commandTopic", commandTopic);
   ros::param::get("joint", joint);
   ros::param::get("tolerance", defaultTolerance);
 
@@ -181,8 +190,12 @@ void configure()
 void initialize(ros::NodeHandle node)
 {
   // Initialize joint trajectory subscriber
-  sub = node.subscribe<control_msgs::FollowJointTrajectoryActionGoal>(
-    controlTopic, 1, &control);
+  trajSub = node.subscribe<control_msgs::FollowJointTrajectoryActionGoal>(
+    trajectoryTopic, 1, &trajectoryControl);
+
+  // Initialize joint command subscriber
+  trajSub = node.subscribe<std_msgs::Float64>(
+    commandTopic, 1, &commandControl);
 
   // Initialize sensor
   sensor.initialize(node);
@@ -198,10 +211,21 @@ void initialize(ros::NodeHandle node)
 }
 
 /*----------------------------------------------------------*\
-| Trajectory control
+| Control
 \*----------------------------------------------------------*/
 
-void control(const control_msgs::FollowJointTrajectoryActionGoal::ConstPtr& msg)
+void commandControl(const std_msgs::Float64::ConstPtr& msg)
+{
+  beginTrajectory(
+    ros::Time::now(),
+    {
+      { msg->data, 1.0, 1.0 }
+    },
+    defaultTolerance
+  );
+}
+
+void trajectoryControl(const control_msgs::FollowJointTrajectoryActionGoal::ConstPtr& msg)
 {
   auto goalTrajectory = msg->goal.trajectory;
 
@@ -316,12 +340,19 @@ void runTrajectory(ros::Time time)
     velocityError
   );
 
-  if (!isSameSign(command, lastCommand))
+  if (!isSameSign(command, lastCommand) && point > 0)
   {
     double direction = trajectory.back().position - sensor.getPosition();
+    ROS_WARN(
+      "detected reverse: to get to %g from %g we need %g",
+      trajectory.back().position,
+      sensor.getPosition(),
+      direction
+    );
 
     if (isSameSign(lastCommand, direction))
     {
+      ROS_WARN("prevented reversing, set %g instead of %g", velocity, command);
       command = velocity;
     }
   }

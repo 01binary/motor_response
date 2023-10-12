@@ -17,7 +17,8 @@ maxPos: 1.4929
 threshold: 8
 average: 16
 # control
-controlTopic: /arm_velocity_controller/follow_joint_trajectory/goal
+trajectoryTopic: /arm_velocity_controller/follow_joint_trajectory/goal
+commandTopic: /tune/command
 joint: base
 # recording
 log: /home/val/catkin_ws/response.csv
