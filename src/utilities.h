@@ -39,3 +39,8 @@ inline double mapZero(double value, double min, double max, double targetMin, do
     return 0.0;
   }
 }
+
+inline bool isSameSign(double a, double b)
+{
+  return (a >= 0.0) == (b >= 0.0);
+}

@@ -33,6 +33,7 @@
 
 #include "motor.h"
 #include "encoder.h"
+#include "utilities.h"
 
 /*----------------------------------------------------------*\
 | Types
@@ -61,6 +62,9 @@ std::string controlTopic;
 
 // The joint to watch for in trajectory commands
 std::string joint;
+
+// The default goal position tolerance
+double defaultTolerance;
 
 //
 // State
@@ -161,6 +165,7 @@ void configure()
   ros::param::get("rate", spinRate);
   ros::param::get("controlTopic", controlTopic);
   ros::param::get("joint", joint);
+  ros::param::get("tolerance", defaultTolerance);
 
   // Read actuator settings
   actuator.configure();
@@ -211,7 +216,6 @@ void control(const control_msgs::FollowJointTrajectoryActionGoal::ConstPtr& msg)
   {
     // Parse trajectory
     size_t jointIndex = jointPos - goalTrajectory.joint_names.cbegin();
-    auto tolerance = msg->goal.goal_tolerance[jointIndex];
     std::vector<trajectoryPoint> trajectoryPoints(goalTrajectory.points.size());
     double prevTime = 0.0;
 
@@ -225,7 +229,18 @@ void control(const control_msgs::FollowJointTrajectoryActionGoal::ConstPtr& msg)
       prevTime = timeFromStart;
     }
 
-    beginTrajectory(ros::Time::now(), trajectoryPoints, tolerance.position);
+    double tolerance;
+
+    if (msg->goal.goal_tolerance.size() > jointIndex)
+    {
+      tolerance = msg->goal.goal_tolerance[jointIndex].position;
+    }
+    else
+    {
+      tolerance = defaultTolerance;
+    }
+
+    beginTrajectory(ros::Time::now(), trajectoryPoints, tolerance);
   }
   else
   {
@@ -260,7 +275,10 @@ void endTrajectory()
 
 void runTrajectory(ros::Time time)
 {
-  if (!trajectory.size() || done) return;
+  if (!trajectory.size() || done)
+  {
+    return;
+  }
 
   ros::Duration elapsed = time - startTime;
   bool isLast = point == int(trajectory.size()) - 1;
@@ -280,44 +298,36 @@ void runTrajectory(ros::Time time)
   if (abs(positionError) <= goalTolerance && isLast)
   {
     endTrajectory();
+    return;
   }
-  else
+
+  double command = pid.computeCommand(positionError, velocityError, period);
+
+  ROS_INFO(
+    "[%d] time %#.4g\tper %#.4g\ttarget pos %#+.4g\tpos %#+.4g\ttarget vel %#+.4g\tvel %#+.4g\tperr %#+.4g\tverr %#+.4g",
+    int(point),
+    elapsed.toSec(),
+    period.toSec(),
+    position,
+    sensor.getPosition(),
+    velocity,
+    actuator.getVelocity(),
+    positionError,
+    velocityError
+  );
+
+  if (!isSameSign(command, lastCommand))
   {
-    double command = pid.computeCommand(positionError, velocityError, period);
-    bool isReversing = lastCommand < 0.0 && command >= 0.0 || lastCommand >= 0.0 && command < 0.0;
+    double direction = trajectory.back().position - sensor.getPosition();
 
-    ROS_INFO(
-      "[%d] time %#.4g\tper %#.4g\ttarget pos %#+.4g\tpos %#+.4g\ttarget vel %#+.4g\tvel %#+.4g\tperr %#+.4g\tverr %#+.4g",
-      int(point),
-      elapsed.toSec(),
-      period.toSec(),
-      position,
-      sensor.getPosition(),
-      velocity,
-      actuator.getVelocity(),
-      positionError,
-      velocityError
-    );
-
-    if (isReversing)
+    if (isSameSign(lastCommand, direction))
     {
-      // Prevent reversing if moving toward the end of trajectory
-      double direction = trajectory.back().position - sensor.getPosition();
-      bool isSameDirection =
-        (lastCommand < 0.0 && direction < 0.0) ||
-        (lastCommand >= 0.0 && direction >= 0.0);
-
-      if (isSameDirection)
-      {
-        command = velocity;
-      }
+      command = velocity;
     }
-
-    actuator.command(command);
-
-
-    lastCommand = command;
   }
 
+  actuator.command(command);
+
+  lastCommand = command;
   lastTime = time;
 }
