@@ -451,6 +451,9 @@ void runTrajectory(ros::Time time)
     // Do not reverse direction if we missed a waypoint
     // as long as we're moving toward the final goal
     ROS_WARN("prevented reversing");
+
+    // TODO: if this condition does occur a lot, consider setting lower velocity
+    // if the current point velocity < last point velocity
     return;
   }
 

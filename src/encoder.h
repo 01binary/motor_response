@@ -12,7 +12,7 @@
 | Includes
 \*----------------------------------------------------------*/
 
-#include <str1ker/Adc.h>
+#include <motor_response/Adc.h>
 #include "filter.h"
 #include "utilities.h"
 
@@ -40,7 +40,7 @@ private:
   //
 
   // Input topic for listening to analog readings from absolute encoder
-  std::string m_topic = "robot/adc";
+  std::string m_topic = "adc";
 
   // Analog input channel
   int m_input;
@@ -155,11 +155,11 @@ public:
   void initialize(ros::NodeHandle& node)
   {
     // Subscribe to analog readings
-    m_sub = node.subscribe<str1ker::Adc>(
+    m_sub = node.subscribe<motor_response::Adc>(
       m_topic, QUEUE_SIZE, &encoder::feedback, this);
   }
 
-  void feedback(const str1ker::Adc::ConstPtr& msg)
+  void feedback(const motor_response::Adc::ConstPtr& msg)
   {
     // Read analog input
     m_reading = m_filter(msg->adc[m_input]);

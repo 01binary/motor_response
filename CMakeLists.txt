@@ -7,8 +7,21 @@ find_package(
   catkin
   REQUIRED COMPONENTS
     roscpp
-    str1ker
     control_toolbox
+    urdf
+)
+
+add_message_files(
+  DIRECTORY msg
+  FILES
+  Adc.msg
+  Pwm.msg
+  PwmChannel.msg
+)
+
+generate_messages(
+  DEPENDENCIES
+  std_msgs
 )
 
 catkin_package(
@@ -21,7 +34,7 @@ catkin_package(
 
 include_directories(
   ${catkin_INCLUDE_DIRS}
-  ${str1ker_INCLUDE_DIRS}
+  ${motor_response_INCLUDE_DIRS}
 )
 
 add_executable(
@@ -33,7 +46,6 @@ add_executable(
   tune
   src/tune.cpp
 )
-
 
 add_dependencies(
   ${catkin_EXPORTED_TARGETS}

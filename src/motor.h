@@ -4,7 +4,7 @@
 
 #include <string>
 #include <ros/ros.h>
-#include <str1ker/Pwm.h>
+#include <motor_response/Pwm.h>
 #include "utilities.h"
 
 /*----------------------------------------------------------*\
@@ -29,7 +29,7 @@ private:
   //
 
   // PWM output topic
-  std::string m_topic = "robot/pwm";
+  std::string m_topic = "pwm";
 
   // Left PWM channel
   int m_lpwm = 0;
@@ -121,7 +121,7 @@ public:
   void initialize(ros::NodeHandle node)
   {
     // Initialize PWM output publisher
-    m_pwmPub = node.advertise<str1ker::Pwm>(
+    m_pwmPub = node.advertise<motor_response::Pwm>(
       m_topic,
       QUEUE_SIZE
     );
@@ -137,18 +137,18 @@ public:
     m_lpwmCommand = (velocity >= 0 ? 0 : dutyCycle);
     m_rpwmCommand = (velocity >= 0 ? dutyCycle : 0);
 
-    str1ker::Pwm msg;
+    motor_response::Pwm msg;
     msg.channels.resize(2);
 
     // LPWM
     msg.channels[0].channel = m_lpwm;
-    msg.channels[0].mode = str1ker::PwmChannel::MODE_ANALOG;
+    msg.channels[0].mode = motor_response::PwmChannel::MODE_ANALOG;
     msg.channels[0].value = m_lpwmCommand;
     msg.channels[0].duration = 0;
 
     // RPWM
     msg.channels[1].channel = m_rpwm;
-    msg.channels[1].mode = str1ker::PwmChannel::MODE_ANALOG;
+    msg.channels[1].mode = motor_response::PwmChannel::MODE_ANALOG;
     msg.channels[1].value = m_rpwmCommand;
     msg.channels[1].duration = 0;
 

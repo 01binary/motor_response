@@ -2,8 +2,8 @@
   <!-- Shared Configuration -->
   <rosparam file="$(find motor_response)/config/settings.yaml" />
 
-  <!-- PID Configuration -->
-  <rosparam file="$(find motor_response)/config/pid.yaml" />
+  <!-- Tuning Configuration -->
+  <rosparam file="$(find motor_response)/config/tune.yaml" />
 
   <!-- Tool -->
   <node

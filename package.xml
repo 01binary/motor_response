@@ -9,7 +9,6 @@
   <buildtool_depend>catkin</buildtool_depend>
   <depend>roscpp</depend>
   <build_depend>actionlib</build_depend>
-  <build_depend>str1ker</build_depend>
   <build_depend>control_toolbox</build_depend>
   <exec_depend>actionlib</exec_depend>
   <exec_depend>control_toolbox</exec_depend>
