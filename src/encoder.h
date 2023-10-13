@@ -166,7 +166,11 @@ public:
 
     // Re-map to position
     m_position = map(
-      (double)m_reading, (double)m_minReading, (double)m_maxReading, m_minPos, m_maxPos);
+      (double)m_reading,
+      (double)m_minReading,
+      (double)m_maxReading,
+      m_minPos,
+      m_maxPos);
 
     // Check if the position is ready to be used
     if (!m_ready)

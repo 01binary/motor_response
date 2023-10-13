@@ -1,7 +1,7 @@
 tolerance: 0.05
 pid:
-  p: -4.041
-  i: -0.0011897
-  d: -696.5203
+  p: 0.8678
+  i: 0.0119
+  d: 0.0
   i_clamp: 1.0
   antiwindup: false

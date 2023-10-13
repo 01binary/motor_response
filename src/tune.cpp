@@ -275,6 +275,7 @@ void initialize(ros::NodeHandle node)
 
   // Initialize actuator
   actuator.initialize(node);
+  actuator.command(0.0);
 
   // Initialize PID controller
   if (!pid.init(ros::NodeHandle(node, "pid")))
@@ -354,11 +355,11 @@ void beginTrajectory(ros::Time time, std::vector<trajectoryPoint> points, double
   ROS_INFO(
     "starting trajectory with %d points %g tolerance",
     (int)points.size(),
-    tolerance
-  );
+    tolerance);
 
-  startTime = time;
   point = 0;
+  startTime = time;
+  lastTime = time;
   trajectory = points;
   goalTolerance = tolerance;
   done = false;
@@ -432,10 +433,9 @@ void runTrajectory(ros::Time time)
   double command = pid.computeCommand(positionError, velocityError, period);
 
   ROS_INFO(
-    "[%d] time %#.4g\tper %#.4g\ttarget pos %#+.4g\tpos %#+.4g\ttarget vel %#+.4g\tvel %#+.4g\tperr %#+.4g\tverr %#+.4g",
+    "[%d] time %#.4g\ttarget pos %#+.4g\tpos %#+.4g\ttarget vel %#+.4g\tvel %#+.4g\tperr %#+.4g\tverr %#+.4g",
     int(point),
     elapsed.toSec(),
-    period.toSec(),
     position,
     currentPosition,
     velocity,

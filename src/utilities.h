@@ -28,6 +28,13 @@ inline double clampZero(double value, double min, double max)
   return value;
 }
 
+template <class T> inline double clamp(T value, T min, T max)
+{
+  if (value < min) return min;
+  if (value > max) return max;
+  return value;
+}
+
 inline double map(double value, double min, double max, double targetMin, double targetMax)
 {
   return (value - min) / (max - min) * (targetMax - targetMin) + targetMin;
