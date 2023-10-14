@@ -15,7 +15,6 @@
 #define USE_USBCON
 
 #include <ros.h>                      // ROS communication
-#include <Adafruit_PWMServoDriver.h>  // Analog write library
 #include <motor_response/Adc.h>       // Analog read request
 #include <motor_response/Pwm.h>       // Analog write request
 
@@ -30,12 +29,13 @@ const double RATE_HZ = 50.0;
 const int DELAY = 1000.0 / RATE_HZ;
 
 // Analog output
-const int PWM_CHANNELS = 16;
-const int PWM_FREQ_HZ = 5000;
-const int PWM_MAX = 4096;
+const int PWM_CHANNELS = 4;
 const int PWM_PINS[] =
 {
-  // ?
+  D3,
+  D11,
+  D5,
+  D13
 }
 
 // Analog input
@@ -93,7 +93,10 @@ void initAdc()
 
 void initPwm()
 {
-  // TODO: init Arduino PWM pins
+  for (int channel = 0; channel < PWM_CHANNELS; channel++)
+  {
+    pinMode(PWM_PINS[channel], OUTPUT);
+  }
 
   node.subscribe(sub);
 }
@@ -126,26 +129,16 @@ void readAdc()
 | Analog output
 \*----------------------------------------------------------*/
 
-void analog(int channel, int value)
-{
-  // channel, when on (0-4096), when off (0-4096)
-  // TODO: set using Arduino
-  if (value == 0)
-    pwm.setPWM(channel, 0, PWM_MAX);
-  else if (value == PWM_MAX)
-    pwm.setPWM(channel, PWM_MAX, 0);
-  else
-    pwm.setPWM(channel, PWM_MAX - value, 0);
-}
-
 void writePwm(const motor_response::Pwm& msg)
 {
-  for (uint32_t n = 0; n < msg.channels_length; n++)
+  for (int n = 0; n < msg.channels_length; n++)
   {
     motor_response::PwmChannel& request = msg.channels[n];
-    if (request.channel >= PWM_CHANNELS) continue;
 
-    analog(request.channel, request.value);
+    if (request.channel >= 0 && request.channel < PWM_CHANNELS)
+    {
+      analogWrite(PWM_CHANNELS[request.channel], request.value);
+    }
   }
 }
 
