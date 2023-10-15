@@ -154,8 +154,8 @@ void initialize(ros::NodeHandle node);
 void commandControl(const std_msgs::Float64::ConstPtr& msg);
 void trajectoryControl(const control_msgs::FollowJointTrajectoryActionGoal::ConstPtr& msg);
 void beginTrajectory(ros::Time time, std::vector<trajectoryPoint> points, double tolerance);
-void endTrajectory();
 void runTrajectory(ros::Time time);
+void endTrajectory();
 
 /*----------------------------------------------------------*\
 | Package entry point
