@@ -3,8 +3,8 @@ rate: 40
 outputTopic: /robot/pwm
 lpwm: 0
 rpwm: 1
-minPwm: 520
-maxPwm: 4096
+minPwm: 64
+maxPwm: 255
 minVelocity: 0.0
 maxVelocity: 1.0
 # input
@@ -18,8 +18,6 @@ threshold: 8
 average: 16
 # control
 trajectoryTopic: /arm_velocity_controller/follow_joint_trajectory/goal
-feedbackTopic: /tune/feedback
-commandTopic: /tune/command
 joint: base
 # recording
 log: /home/val/catkin_ws/response.csv
