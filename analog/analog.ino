@@ -37,11 +37,11 @@ const int DELAY = 1000.0 / RATE_HZ;
 const int PWM_CHANNELS = 4;
 const int PWM_PINS[] =
 {
-  D3,
-  D11,
-  D5,
-  D13
-}
+  3,
+  11,
+  5,
+  13
+};
 
 // Analog input
 const int ANALOG_CHANNELS = 12;
@@ -142,7 +142,7 @@ void writePwm(const motor_response::Pwm& msg)
 
     if (request.channel >= 0 && request.channel < PWM_CHANNELS)
     {
-      analogWrite(PWM_CHANNELS[request.channel], request.value);
+      analogWrite(PWM_PINS[request.channel], request.value);
     }
   }
 }
