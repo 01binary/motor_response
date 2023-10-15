@@ -2,11 +2,13 @@
 
 # DC Motor Characterization Tool
 
+If you are using DC motors which can only be controlled by PWM velocity commands rather than sophisticated servos with built-in controller that accepts position commands, you will need a way to control them.
+
 The `sample` utility in this package will help you record the response of a DC motor to a sequence of step inputs so that the resulting data can be used to mathematically model the motor and determine the PID gains which can be used to control it.
 
 Once the PID gains are determined, the `tune` utility will let you use the same fixture to send commands to the motor and verify it responds as expected, while changing PID gains on the fly.
 
-> Both utilities require an installation of ROS (Robot Operating System) but the characterization and tuning can be performed by moving a robot arm in a simulator and watching a real robot arm respond.
+> Both utilities require an installation of ROS (Robot Operating System) but the advantage is that both step input and test commands can be sent directly from 3D simulation running in **RViz**, enabling you to move the simulated robot arm and watch how the real thing responds.
 
 ## Background
 
@@ -51,6 +53,38 @@ To tune the motor:
 * Configure the controller parameters and the goal tolerance in `pid.yaml` configuration file in this package
 * Launch the `tune` tool which will listen for motor position commands and send velocity commands to the motor to achieve the commanded position by applying the PID gains calculated in the previous step.
 
+## Install
+
+```
+cd ~/catkin_ws/src
+rosdep install -y --from-paths . --ignore-src --rosdistro noetic
+```
+
+## Build
+
+To build the project with ROS installed, execute the following within catkin workspace:
+
+```
+catkin_make
+```
+
+The analog read and write duties are handled by an Arduino ROS node in `./src/analog.ino`.
+
+To build it, first generate ROS message headers for Arduino:
+
+```
+sudo apt-get install ros-${ROS_DISTRO}-rosserial-arduino
+sudo apt-get install ros-${ROS_DISTRO}-rosserial
+
+rosrun rosserial_arduino make_libraries.py <Arduino libraries path>
+```
+
+> The Arduino libraries are usually in `~/Arduino/libraries`. If you installed Arduino IDE as a *snap*, you could also try looking in `~/snap/arduino`.
+
+Then open `analog.ino` in Arduino IDE, build, and upload to Arduino connected to your PC.
+
+This node will listen on `/pwm` ROS topic for PWM commands and publish analog readings to `/adc` ROS topic.
+
 ## Sample
 
 The sampling utility can be launched like this:
@@ -59,7 +93,9 @@ The sampling utility can be launched like this:
 roslaunch motor_response sample.launch
 ```
 
-Configuration settings are in `/config/settings.yaml` and `/config/steps.yaml`.
+Configuration settings are in `/config/common.yaml` and `/config/sample.yaml`.
+
+> Both `sample.launch` and `tune.launch` will attempt to start the Arduino serial node in this package on `/dev/ttyACM0`, which requires the steps above to be completed (`analog.ino` built and uploaded). See [Build](#build) topic for more information.
 
 ## Tune
 
@@ -69,7 +105,9 @@ The tuning utility can be launched like this:
 roslaunch motor_response tune.launch
 ```
 
-Configuration settings are in `/config/settings.yaml` and `/config/pid.yaml`.
+Configuration settings are in `/config/common.yaml` and `/config/tune.yaml`.
+
+> Both `sample.launch` and `tune.launch` will attempt to start the Arduino serial node in this package on `/dev/ttyACM0`, which requires the steps above to be completed (`analog.ino` built and uploaded). See [Build](#build) topic for more information.
 
 To send a position command:
 
@@ -169,13 +207,13 @@ minPos: -1.4929
 maxPos: 1.4929
 ```
 
-Next we observe that the motor (with the load attached) will not move if the pulse width sent to its driver is anything less than `520` (out of `4096`). It moves at maximum velocity of `4096` just fine.
+Next we observe that the motor (with the load attached) will not move if the pulse width sent to its driver is anything less than `64` (out of `255`). It moves at maximum velocity of `255` just fine.
 
-This maps to the `0.0` to `1.0` velocity on the URDF joint, so that when we command "maximum" velocity we get a pulse width of `100%` sent to the motor, and when we command the "minimum" velocity we get a pulse width of `13%` because `520` is `13%` of `4096`. The `0` velocity will still get us `0` pulse width (zeros always map to each other) so that the motor can be stopped.
+This maps to the `0.0` to `1.0` velocity on the URDF joint, so that when we command "maximum" velocity we get a pulse width of `100%` sent to the motor, and when we command the "minimum" velocity we get a pulse width of `25%` because `64` is `25%` of `255`. The `0` velocity will still get us `0` pulse width (zeros always map to each other) so that the motor can be stopped.
 
 ```
-minPwm: 520
-maxPwm: 4096
+minPwm: 64
+maxPwm: 255
 minVelocity: 0.0
 maxVelocity: 1.0
 ```
