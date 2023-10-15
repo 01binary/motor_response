@@ -7,6 +7,7 @@ find_package(
   catkin
   REQUIRED COMPONENTS
     roscpp
+    message_generation
     control_toolbox
     urdf
 )
@@ -30,6 +31,7 @@ catkin_package(
     roscpp
     actionlib
     control_toolbox
+    message_runtime
 )
 
 include_directories(
@@ -48,7 +50,15 @@ add_executable(
 )
 
 add_dependencies(
+  sample
   ${catkin_EXPORTED_TARGETS}
+  ${motor_response_EXPORTED_TARGETS}
+)
+
+add_dependencies(
+  tune
+  ${catkin_EXPORTED_TARGETS}
+  ${motor_response_EXPORTED_TARGETS}
 )
 
 target_link_libraries(
