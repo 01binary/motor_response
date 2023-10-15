@@ -1,6 +1,6 @@
 <launch>
   <!-- Shared Configuration -->
-  <rosparam file="$(find motor_response)/config/settings.yaml" />
+  <rosparam file="$(find motor_response)/config/common.yaml" />
 
   <!-- Tuning Configuration -->
   <rosparam file="$(find motor_response)/config/tune.yaml" />
