@@ -1,3 +1,5 @@
+![logo](./logo.svg)
+
 # DC Motor Characterization Tool
 
 The `sample` utility in this package will help you record the response of a DC motor to a sequence of step inputs so that the resulting data can be used to mathematically model the motor and determine the PID gains which can be used to control it.
