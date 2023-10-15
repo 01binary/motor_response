@@ -125,12 +125,17 @@ Shared settings include:
 ### Output settings
 
 * `outputTopic` - The ROS topic for sending PWM commands to the bi-directional motor driver that takes LPWM and RPWM digital inputs to run the motor forward or in reverse.
+* `lpwm` - The `0`-based output channel on Arduino (see below)
+* `rpwm` - The `0`-based output channel on Arduino (see below)
 
-  > The low-level PWM commands are sent to the `analog` serial node in this package running on an Arduino, and the Arduino communicates with the motor H-bridge driver via [Adafrut Servo Driver](https://www.adafruit.com/product/815)
-* `lpwm` - The `0`-based output channel on the Adafruit Servo Driver where to send the LPWM pulse at `5` kHz.
-* `rpwm` - The `0`-based output channel on the Adafruit Serveo Driver where to send the RPWM pulse at `5` kHz.
-* `minPwm` - The minimum PWM pulse width (`0` - `4096`). Set this to the minimum pulse width that will still turn the motor with the load attached from a stand-still position. The application will still send `0` to stop the motor, but it will not send anything between `0` and this value, jumping straight to the minimum PWM.
-* `maxPwm` - The maximum PWM pulse width (`0` - `4096`). This can be used to restrict the maximum pulse width that can be sent to the motor driver.
+  The following channels are available:
+  - channel `0` - `~D3` (digital PWM pin `3`, at `980` Hz)
+  - channel `1` - `~D11` (digital PWM pin `11`, at `980` Hz)
+  - channel `2` - `~D5` (digital PWM pin `5`, at `490` Hz)
+  - channel `3` - `~D13` (digital PWM pin `13` at `490` Hz)
+
+* `minPwm` - The minimum PWM pulse width (`0` - `255`). Set this to the minimum pulse width that will still turn the motor with the load attached from a stand-still position. The application will still send `0` to stop the motor, but it will not send anything between `0` and this value, jumping straight to the minimum PWM.
+* `maxPwm` - The maximum PWM pulse width (`0` - `255`). This can be used to restrict the maximum pulse width that can be sent to the motor driver.
 * `minVelocity` - The floating point value mapped to the minimum PWM.
 * `maxVelocity` - The floating point value mapped to the maximum PWM.
 
@@ -139,19 +144,19 @@ Shared settings include:
 ### Input Settings
 
 * `inputTopic` - The ROS topic for receiving the readings from the absolute encoder. This also uses the Arduino serial node implemented by the `analog` module in this package. Readings are received directly as digital pin values between `0` and `1024`
-* `input` - The input channel (pin where the absolute encoder position terminal is attached). The channels are mapped as follows on the arduino:
-  * channel `0` - `A0` pin
-  * channel `1` - `A1` pin
-  * channel `2` - `A2` pin
-  * channel `3` - `A3` pin
-  * channel `4` - `A4` pin
-  * channel `5` - `A5` pin
-  * channel `6` - `A6` pin
-  * channel `7` - `A7` pin
-  * channel `8` - `A8` pin
-  * channel `9` - `A9` pin
-  * channel `10` - `A10` pin
-  * channel `11` - `A11` pin
+* `input` - The input channel (pin where the absolute encoder position terminal is attached). The channels are mapped as follows on the Arduino:
+  * channel `0` - `A0` ADC pin
+  * channel `1` - `A1` ADC pin
+  * channel `2` - `A2` ADC pin
+  * channel `3` - `A3` ADC pin
+  * channel `4` - `A4` ADC pin
+  * channel `5` - `A5` ADC pin
+  * channel `6` - `A6` ADC pin
+  * channel `7` - `A7` ADC pin
+  * channel `8` - `A8` ADC pin
+  * channel `9` - `A9` ADC pin
+  * channel `10` - `A10` ADC pin
+  * channel `11` - `A11` ADC pin
 * `minReading` - The minimum encoder reading to clamp the values to (`0` readings stay `0`)
 * `maxReading` - The maximum encoder reading to clamp the values to.
 * `minPos` - The minimum floating-point value to report when the encoder reads `minReading` (when the encoder reports `0` the position is still `0`)
