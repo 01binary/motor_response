@@ -33,7 +33,7 @@ private:
   const int PWM_MIN = 0;
 
   // Default max PWM pulse width
-  const int PWM_MAX = 4096;
+  const int PWM_MAX = 255;
 
   // Publish queue size
   const int QUEUE_SIZE = 8;
@@ -106,18 +106,18 @@ public:
   }
 
 public:
+  // Get current velocity
   inline double getVelocity() {
-    // Get current velocity
     return m_velocity;
   }
 
+  // Get current LPWM pulse width
   inline int getLPWM() {
-    // Get current LPWM pulse width
     return m_lpwmCommand;
   }
 
+  // Get current RPWM pulse width
   inline int getRPWM() {
-    // Get current RPWM pulse width
     return m_rpwmCommand;
   }
 
@@ -157,15 +157,11 @@ public:
 
     // LPWM
     msg.channels[0].channel = m_lpwm;
-    msg.channels[0].mode = motor_response::PwmChannel::MODE_ANALOG;
     msg.channels[0].value = m_lpwmCommand;
-    msg.channels[0].duration = 0;
 
     // RPWM
     msg.channels[1].channel = m_rpwm;
-    msg.channels[1].mode = motor_response::PwmChannel::MODE_ANALOG;
     msg.channels[1].value = m_rpwmCommand;
-    msg.channels[1].duration = 0;
 
     m_pwmPub.publish(msg);
   }
