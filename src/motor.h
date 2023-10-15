@@ -94,7 +94,13 @@ public:
   }
 
   motor(
-    std::string topic, int lpwm, int rpwm, int minPwm, int maxPwm, double minVelocity, double maxVelocity)
+    std::string topic,
+    int lpwm,
+    int rpwm,
+    int minPwm,
+    int maxPwm,
+    double minVelocity,
+    double maxVelocity)
     : m_topic(topic)
     , m_lpwm(lpwm)
     , m_rpwm(rpwm)
