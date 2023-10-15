@@ -27,6 +27,7 @@
 #include <vector>
 #include <iostream>
 #include <fstream>
+#include <wordexp.h>
 
 //
 // ROS
@@ -211,7 +212,18 @@ void initialize(ros::NodeHandle node)
   // Open the log file if specified
   if (outputLog.size())
   {
-    logFile.open(outputLog);
+    wordexp_t result;
+    
+    if (wordexp(outputLog.c_str(), &result, 0) == 0)
+    {
+      logFile.open(result.we_wordv[0]);
+    }
+    else
+    {
+      logFile.open(outputLog);
+    }
+
+    wordfree (&result);
 
     if (!logFile.is_open())
     {

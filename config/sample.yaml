@@ -1,3 +1,4 @@
+log: ~/catkin_ws/response.csv
 steps:
   step1:
     velocity: 0.125
