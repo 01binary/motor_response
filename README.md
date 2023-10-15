@@ -4,7 +4,7 @@
 
 The `sample` utility in this package will help you record the response of a DC motor to a sequence of step inputs so that the resulting data can be used to mathematically model the motor and determine the PID gains which can be used to control it.
 
-Once the PID gains are determined, the `tune` utility will let you use the same fixture to send commands to the motor and verify it responds as expected.
+Once the PID gains are determined, the `tune` utility will let you use the same fixture to send commands to the motor and verify it responds as expected, while changing PID gains on the fly.
 
 > Both utilities require an installation of ROS (Robot Operating System) but the characterization and tuning can be performed by moving a robot arm in a simulator and watching a real robot arm respond.
 
