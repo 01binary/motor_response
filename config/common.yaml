@@ -10,8 +10,8 @@ maxVelocity: 1.0
 # input
 inputTopic: /adc
 input: 0
-minReading: 293
-maxReading: 790
+minReading: 270
+maxReading: 794
 minPos: -1.4929
 maxPos: 1.4929
 threshold: 8
