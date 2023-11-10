@@ -264,16 +264,38 @@ void configure()
 
 void initialize(ros::NodeHandle node)
 {
-  // Initialize joint trajectory subscriber
-  trajSub = node.subscribe<control_msgs::FollowJointTrajectoryActionGoal>(
-    trajectoryTopic, 1, &trajectoryControl);
+  if (!trajectoryTopic.empty())
+  {
+    // Initialize joint trajectory subscriber
+    trajSub = node.subscribe(
+      trajectoryTopic.c_str(), 1, &trajectoryControl);
+
+    if (!trajSub)
+    {
+      ROS_ERROR("failed to subscribe to %s", trajectoryTopic.c_str());
+    }
+    else
+    {
+      ROS_INFO("subscribed to %s", trajectoryTopic.c_str());
+    }
+  }
 
   // Initialize joint command subscriber
-  trajSub = node.subscribe<std_msgs::Float64>(
-    commandTopic, 1, &commandControl);
+  if (!commandTopic.empty())
+  {
+    cmdSub = node.subscribe(
+      commandTopic, 1, &commandControl);
 
-  // Initialize joint position publisher
-  feedbackPub = node.advertise<std_msgs::Float64>(feedbackTopic, 1);
+    ROS_INFO("subscribed to %s", commandTopic.c_str());
+  }
+
+  if (!feedbackTopic.empty())
+  {
+    // Initialize joint position publisher
+    feedbackPub = node.advertise<std_msgs::Float64>(feedbackTopic, 1);
+
+    ROS_INFO("publishing on %s", feedbackTopic.c_str());
+  }
 
   // Initialize sensor
   sensor.initialize(node);

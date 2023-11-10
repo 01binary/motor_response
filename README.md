@@ -93,7 +93,7 @@ The sampling utility can be launched like this:
 roslaunch motor_response sample.launch
 ```
 
-Configuration settings are in `/config/common.yaml` and `/config/sample.yaml`.
+Configuration settings are in `/config/joint.yaml` and `/config/sample.yaml`.
 
 > Both `sample.launch` and `tune.launch` will attempt to start the Arduino serial node in this package on `/dev/ttyACM0`, which requires the steps above to be completed (`analog.ino` built and uploaded). See [Build](#build) topic for more information.
 
@@ -105,7 +105,7 @@ The tuning utility can be launched like this:
 roslaunch motor_response tune.launch
 ```
 
-Configuration settings are in `/config/common.yaml` and `/config/tune.yaml`.
+Configuration settings are in `/config/joint.yaml`.
 
 > Both `sample.launch` and `tune.launch` will attempt to start the Arduino serial node in this package on `/dev/ttyACM0`, which requires the steps above to be completed (`analog.ino` built and uploaded). See [Build](#build) topic for more information.
 

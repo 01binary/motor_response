@@ -6,9 +6,10 @@ add_compile_options(-std=c++11)
 find_package(
   catkin
   REQUIRED COMPONENTS
-    roscpp
+    control_msgs
     message_generation
     control_toolbox
+    roscpp
     urdf
 )
 
@@ -30,6 +31,7 @@ catkin_package(
   CATKIN_DEPENDS
     roscpp
     actionlib
+    control_msgs
     control_toolbox
     message_runtime
 )

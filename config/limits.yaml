@@ -1,0 +1,11 @@
+log: ~/catkin_ws/response.csv
+steps:
+  step1:
+    velocity: 1.0
+    duration: 3.0
+  step2:
+    velocity: 0
+    duration: 6.0
+  step3:
+    velocity: -1.0
+    duration: 3.0

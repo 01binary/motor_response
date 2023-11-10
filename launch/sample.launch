@@ -1,6 +1,6 @@
 <launch>
   <!-- Shared Configuration -->
-  <rosparam file="$(find motor_response)/config/common.yaml" />
+  <rosparam file="$(find motor_response)/config/joint.yaml" />
 
   <!-- Sampling Configuration -->
   <rosparam file="$(find motor_response)/config/sample.yaml" />

@@ -1,0 +1,31 @@
+rate: 50
+# output
+outputTopic: /pwm
+lpwm: 0
+rpwm: 1
+minPwm: 32
+maxPwm: 255
+minVelocity: 0.0
+maxVelocity: 1.0
+# input
+inputTopic: /adc
+input: 0
+minReading: 185
+maxReading: 140
+minPos: -0.054
+maxPos: -0.0005
+threshold: 8
+average: 8
+# control
+trajectoryTopic: /arm_velocity_controller/follow_joint_trajectory/goal
+joint: upperarm_actuator
+# tune
+feedbackTopic: /tune/feedback
+commandTopic: /tune/command
+tolerance: 0.05
+pid:
+  p: 10.0
+  i: 0.01
+  d: 1.0
+  i_clamp: 1.0
+  antiwindup: false

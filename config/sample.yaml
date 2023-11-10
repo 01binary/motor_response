@@ -14,7 +14,7 @@ steps:
     duration: 0.1
   step5:
     velocity: 1.0
-    duration: 0.1
+    duration: 0.5
   step6:
     velocity: 0.75
     duration: 0.1

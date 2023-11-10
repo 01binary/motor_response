@@ -112,7 +112,7 @@ void record(double period);
 
 int main(int argc, char** argv)
 {
-  ros::init(argc, argv, "sample");
+  ros::init(argc, argv, "motor_response");
   ros::NodeHandle node;
 
   // Configure node
