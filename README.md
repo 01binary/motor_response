@@ -109,11 +109,25 @@ Configuration settings are in `/config/joint.yaml`.
 
 > Both `sample.launch` and `tune.launch` will attempt to start the Arduino serial node in this package on `/dev/ttyACM0`, which requires the steps above to be completed (`analog.ino` built and uploaded). See [Build](#build) topic for more information.
 
-To send a position command:
+To send a position command through the PID loop:
 
 ```
 rostopic pub /tune/command std_msgs/Float64 'data: 0.0' -1
 ```
+
+To send PWM commands directly to the motor, send a `Pwm` message. The channel index is the same as in your configuration, and value can be between `0` and `255`.
+
+```
+rostopic pub /pwm motor_response/Pwm "{ channels: [{ channel: 0, value: 0 }, { channel: 1, value: 0 } ] }" -1
+```
+
+To read analog values directly from encoders, echo an `Adc` message. The channel index is the same as the `input` configuration setting:
+
+```
+rostopic echo /adc
+```
+
+This will output a stream of messages with `12` encoder values, each between `0` and `1024` (`12` bit).
 
 ## Settings
 
