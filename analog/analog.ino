@@ -111,6 +111,10 @@ void setup()
   node.initNode();
   initAdc();
   initPwm();
+
+  // Ensure the node is ready
+  node.negotiateTopics();
+  delay(3000);
 }
 
 /*----------------------------------------------------------*\
