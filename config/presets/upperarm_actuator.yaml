@@ -10,22 +10,23 @@ maxVelocity: 1.0
 # input
 inputTopic: /adc
 input: 0
-minReading: 185
-maxReading: 140
-minPos: 0.404676
-maxPos: 0.813453
+minReading: 857
+maxReading: 902
+# need to set this to joint limits
+minPos: 0
+maxPos: 1
 threshold: 8
-average: 8
+average: 2
 # control
-trajectoryTopic: /gazebo/arm_velocity_controller/follow_joint_trajectory/goal
+trajectoryTopic: /arm_velocity_controller/follow_joint_trajectory/goal
 joint: upperarm_actuator
 # tune
 feedbackTopic: /tune/feedback
 commandTopic: /tune/command
 tolerance: 0.05
 pid:
-  p: 0.8678
-  i: 0.0119
-  d: 0.0
+  p: 7.762
+  i: 0.2991
+  d: 5.378
   i_clamp: 1.0
   antiwindup: false

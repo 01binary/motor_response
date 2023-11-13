@@ -1,68 +1,11 @@
 log: ~/catkin_ws/response.csv
 steps:
   step1:
-    velocity: 0.125
-    duration: 0.1
+    velocity: 1.0
+    duration: 3.0
   step2:
-    velocity: 0.25
-    duration: 0.1
+    velocity: 0
+    duration: 6.0
   step3:
-    velocity: 0.5
-    duration: 0.1
-  step4:
-    velocity: 0.75
-    duration: 0.1
-  step5:
-    velocity: 1.0
-    duration: 0.5
-  step6:
-    velocity: 0.75
-    duration: 0.1
-  step7:
-    velocity: 0.5
-    duration: 0.1
-  step8:
-    velocity: 0.25
-    duration: 0.1
-  step9:
-    velocity: 0.125
-    duration: 0.1
-  step10:
-    velocity: 0
-    duration: 0.5
-  step11:
-    velocity: 1.0
-    duration: 0.1
-  step12:
     velocity: -1.0
-    duration: 0.5
-  step13:
-    velocity: -0.5
-    duration: 0.5
-  step14:
-    velocity: 0.5
-    duration: 0.25
-  step15:
-    velocity: 0
-    duration: 0.25
-  step16:
-    velocity: -1.0
-    duration: 0.25
-  step17:
-    velocity: 1.0
-    duration: 0.5
-  step18:
-    velocity: -0.5
-    duration: 0.25
-  step19:
-    velocity: -0.25
-    duration: 0.25
-  step20:
-    velocity: 1.0
-    duration: 0.1
-  step21:
-    velocity: 0.5
-    duration: 0.25
-  step22:
-    velocity: 0
     duration: 3.0
