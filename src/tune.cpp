@@ -184,6 +184,9 @@ int main(int argc, char** argv)
       // Wait until we have readings from the encoder
       ROS_INFO("ready");
       ready = true;
+
+      // Reset actuator
+      actuator.command(0.0);
     }
     else
     {
@@ -302,7 +305,6 @@ void initialize(ros::NodeHandle node)
 
   // Initialize actuator
   actuator.initialize(node);
-  actuator.command(0.0);
 
   // Initialize PID controller
   if (!pid.init(ros::NodeHandle(node, "pid")))
@@ -471,20 +473,14 @@ void runTrajectory(ros::Time time)
     velocityError
   );
 
-  if (point > 0 &&
-      !isSameSign(command, lastCommand) &&
-      isSameSign(lastCommand, trajectory.back().position - currentPosition))
+  if (!isSameSign(command, lastCommand))
   {
-    // Do not reverse direction if we missed a waypoint
-    // as long as we're moving toward the final goal
-    ROS_WARN("prevented reversing");
-
-    // TODO: if this condition does occur a lot, consider setting lower velocity
-    // if the current point velocity < last point velocity
-    return;
+    actuator.command(0.0);
   }
-
-  actuator.command(command);
+  else
+  {
+    actuator.command(command);
+  }
 
   lastCommand = command;
   lastTime = time;
