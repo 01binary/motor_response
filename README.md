@@ -30,7 +30,7 @@ Tuning a running motor while adjusting the PID gains is far more stressful to th
 
 ## Process
 
-To characterize the motor:
+To characterize the motor using a Discrete or Continuous Linear Transfer Function:
 
 * Install MATLab with System Identification Toolbox and Control System Toolbox
 * Setup a fixture with a motor connected to an H-bridge driver that can receive PWM commands
@@ -40,13 +40,23 @@ To characterize the motor:
 * Import the `.csv` file into MATLab using **Import Data** command as *column vectors*
 * Run **System Identification** App in MATLab
 * Choose the imported position and velocity streams
-* Estimate using a *Discrete Transfer Function*
+* Estimate using a *Discrete Transfer Function* or *Continuous Transfer Function*
+* Poles and Zeros can be modified to get a better fit
 * Export the resulting linear transfer function to MATLab workspace
 * Run **PID Tuner** App in MATLab
 * Import the linear transfer function from workspace
 * Choose a PID Controller type
 * Drag the *Response Time* (the spring stiffness) and the *Transient Behavior* (the spring damping) sliders and observe changes predicted to the motor position over time
 * Record the resuling *Controller Parameters* (the Proportional, Integral, and Derivative gains)
+
+Alternatively, if using a Non-Linear characterization (called `nlarx1` in this example), it can be linearized as follows in MATLab:
+
+```
+[x,u] = findop(nlarx1, 'steady', 1, NaN);
+sys = linearize(nlarx1, u, x)
+```
+
+Then the above steps can be followed starting from "Run PID Tuner".
 
 To tune the motor:
 
