@@ -1,8 +1,8 @@
 rate: 50
 # output
 outputTopic: /pwm
-lpwm: 1
-rpwm: 0
+lpwm: 0
+rpwm: 1
 minPwm: 200
 maxPwm: 255
 minVelocity: 0.0
@@ -18,14 +18,14 @@ threshold: 8
 average: 8
 # control
 trajectoryTopic: /arm_velocity_controller/follow_joint_trajectory/goal
-joint: upperarm_actuator
+joint: forearm_actuator
 # tune
 feedbackTopic: /tune/feedback
 commandTopic: /tune/command
 tolerance: 0.0009
 pid:
-  p: -0.6181
-  i: -0.003942
-  d: 0
+  p: 31.12
+  i: 10.22
+  d: 0.3102
   i_clamp: 1.0
   antiwindup: false
