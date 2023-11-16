@@ -139,6 +139,14 @@ rostopic echo /adc
 
 This will output a stream of messages with `12` encoder values, each between `0` and `1024` (`12` bit).
 
+To adjust PID values on the fly:
+
+```
+rosrun rqt_reconfigure rqt_reconfigure
+```
+
+This will launch a dialog with text fields and sliders that can be used to adjust PID parameters as you tune.
+
 ## Settings
 
 Shared settings include:
