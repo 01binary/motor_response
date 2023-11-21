@@ -34,17 +34,20 @@ const double RATE_HZ = 50.0;
 const int DELAY = 1000.0 / RATE_HZ;
 
 // Analog output
-const int PWM_CHANNELS = 4;
+const int PWM_CHANNELS = 7;
 const int PWM_PINS[] =
 {
   3,
   11,
   5,
-  13
+  6,
+  9,
+  10,
+  11
 };
 
 // Analog input
-const int ANALOG_CHANNELS = 12;
+const int ANALOG_CHANNELS = 7;
 const int ANALOG_PINS[] =
 {
   A0,
@@ -53,12 +56,7 @@ const int ANALOG_PINS[] =
   A3,
   A4,
   A5,
-  A6,
-  A7,
-  A8,
-  A9,
-  A10,
-  A11
+  A6
 };
 
 /*----------------------------------------------------------*\
