@@ -1,8 +1,8 @@
 rate: 50
 # output
 outputTopic: /pwm
-lpwm: 0
-rpwm: 1
+lpwm: 1
+rpwm: 0
 minPwm: 64
 maxPwm: 255
 minVelocity: 0.0
@@ -10,10 +10,10 @@ maxVelocity: 1.0
 # input
 inputTopic: /adc
 input: 0
-minReading: 290
-maxReading: 770
-minPos: -1.4929
-maxPos: 1.4929
+minReading: 810
+maxReading: 258
+minPos: 0
+maxPos: 1
 threshold: 8
 average: 2
 # control
@@ -24,8 +24,8 @@ feedbackTopic: /tune/feedback
 commandTopic: /tune/command
 tolerance: 0.02
 pid:
-  p: -0.4079
-  i: -0.05242
-  d: -0.1964
+  p: 0.4079
+  i: 0.05242
+  d: 0.1964
   i_clamp: 1.0
   antiwindup: false
