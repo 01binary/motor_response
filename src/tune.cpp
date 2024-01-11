@@ -31,7 +31,7 @@
 #include <ros/ros.h>
 #include <std_msgs/Float64.h>
 #include <control_toolbox/pid.h>
-#include <control_msgs/FollowJointTrajectoryActionGoal.h>
+#include <moveit_msgs/MoveGroupActionGoal.h>
 #include <angles/angles.h>
 #include <urdf/model.h>
 
@@ -152,7 +152,7 @@ control_toolbox::Pid pid;
 void configure();
 void initialize(ros::NodeHandle node);
 void commandControl(const std_msgs::Float64::ConstPtr& msg);
-void trajectoryControl(const control_msgs::FollowJointTrajectoryActionGoal::ConstPtr& msg);
+void positionControl(const moveit_msgs::MoveGroupActionGoal::ConstPtr& msg);
 void beginTrajectory(ros::Time time, std::vector<trajectoryPoint> points, double tolerance);
 void runTrajectory(ros::Time time);
 void endTrajectory();
@@ -271,7 +271,7 @@ void initialize(ros::NodeHandle node)
   {
     // Initialize joint trajectory subscriber
     trajSub = node.subscribe(
-      trajectoryTopic.c_str(), 1, &trajectoryControl);
+      trajectoryTopic.c_str(), 1, &positionControl);
 
     if (!trajSub)
     {
@@ -328,51 +328,28 @@ void commandControl(const std_msgs::Float64::ConstPtr& msg)
   );
 }
 
-void trajectoryControl(const control_msgs::FollowJointTrajectoryActionGoal::ConstPtr& msg)
+void positionControl(const moveit_msgs::MoveGroupActionGoal::ConstPtr& msg)
 {
-  auto goalTrajectory = msg->goal.trajectory;
+  // Find the joint we are listening for
+  auto goal = msg->goal.request.goal_constraints[0];
+  auto constraints = goal.joint_constraints;
 
-  // Find the joint index we are listening for
-  auto jointPos = std::find(
-    goalTrajectory.joint_names.cbegin(),
-    goalTrajectory.joint_names.cend(),
-    joint
-  );
-
-  if (jointPos != goalTrajectory.joint_names.cend())
+  for (int n = 0; n < goal.joint_constraints.size(); n++)
   {
-    // Parse trajectory
-    size_t jointIndex = jointPos - goalTrajectory.joint_names.cbegin();
-    std::vector<trajectoryPoint> trajectoryPoints(goalTrajectory.points.size());
-    double prevTime = 0.0;
-
-    for (int n = 0; n < trajectoryPoints.size(); n++)
+    if (joint == constraints[n].joint_name)
     {
-      trajectoryPoints[n].position = goalTrajectory.points[n].positions[jointIndex];
-      trajectoryPoints[n].velocity = goalTrajectory.points[n].velocities[jointIndex];
+      std::vector<trajectoryPoint> trajectoryPoints(1);
+      trajectoryPoints[0].position = constraints[n].position;
+      trajectoryPoints[0].velocity = 1.0;
+      trajectoryPoints[0].duration = 1.0;
 
-      double timeFromStart = goalTrajectory.points[n].time_from_start.toSec();
-      trajectoryPoints[n].duration = timeFromStart - prevTime;
-      prevTime = timeFromStart;
+      beginTrajectory(ros::Time::now(), trajectoryPoints, constraints[n].tolerance_above);
+
+      return;
     }
-
-    double tolerance;
-
-    if (msg->goal.goal_tolerance.size() > jointIndex)
-    {
-      tolerance = msg->goal.goal_tolerance[jointIndex].position;
-    }
-    else
-    {
-      tolerance = defaultTolerance;
-    }
-
-    beginTrajectory(ros::Time::now(), trajectoryPoints, tolerance);
   }
-  else
-  {
-    ROS_WARN("joint %s not found in trajectory", joint.c_str());
-  }
+
+  ROS_WARN("joint %s not found in trajectory", joint.c_str());
 }
 
 /*----------------------------------------------------------*\

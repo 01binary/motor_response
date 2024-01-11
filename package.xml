@@ -11,13 +11,16 @@
   <depend>roscpp</depend>
 
   <build_depend>control_msgs</build_depend>
+  <build_depend>moveit_msgs</build_depend>
   <build_depend>actionlib</build_depend>
   <build_depend>control_toolbox</build_depend>
   <build_depend>message_generation</build_depend>
 
   <build_export_depend>control_msgs</build_export_depend>
+  <build_export_depend>moveit_msgs</build_export_depend>
 
   <exec_depend>control_msgs</exec_depend>
+  <exec_depend>moveit_msgs</exec_depend>
   <exec_depend>actionlib</exec_depend>
   <exec_depend>control_toolbox</exec_depend>
   <exec_depend>message_runtime</exec_depend>

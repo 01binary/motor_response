@@ -7,6 +7,7 @@ find_package(
   catkin
   REQUIRED COMPONENTS
     control_msgs
+    moveit_msgs
     message_generation
     control_toolbox
     roscpp
@@ -32,6 +33,7 @@ catkin_package(
     roscpp
     actionlib
     control_msgs
+    moveit_msgs
     control_toolbox
     message_runtime
 )
