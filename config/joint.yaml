@@ -1,5 +1,6 @@
 rate: 50
 # output
+trajectoryTopic: /move_group/goal
 outputTopic: /pwm
 lpwm: 1
 rpwm: 0
@@ -17,11 +18,11 @@ maxPos: 1.5708
 threshold: 8
 average: 2
 # control
-trajectoryTopic: /move_group/goal
 joint: base
 # tune
 feedbackTopic: /tune/feedback
 commandTopic: /tune/command
+goalTopic: /move_group/goal
 tolerance: 0.02
 pid:
   p: 0.4079

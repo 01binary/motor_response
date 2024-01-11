@@ -76,7 +76,7 @@ struct trajectoryPoint
 int spinRate;
 
 // Input topic for listening to trajectory commands
-std::string trajectoryTopic;
+std::string goalTopic;
 
 // Input topic for listening to position commands
 std::string commandTopic;
@@ -209,7 +209,7 @@ void configure()
 {
   // Read control settings
   ros::param::get("rate", spinRate);
-  ros::param::get("trajectoryTopic", trajectoryTopic);
+  ros::param::get("goalTopic", goalTopic);
   ros::param::get("commandTopic", commandTopic);
   ros::param::get("feedbackTopic", feedbackTopic);
   ros::param::get("joint", joint);
@@ -267,19 +267,19 @@ void configure()
 
 void initialize(ros::NodeHandle node)
 {
-  if (!trajectoryTopic.empty())
+  if (!goalTopic.empty())
   {
     // Initialize joint trajectory subscriber
     trajSub = node.subscribe(
-      trajectoryTopic.c_str(), 1, &positionControl);
+      goalTopic.c_str(), 1, &positionControl);
 
     if (!trajSub)
     {
-      ROS_ERROR("failed to subscribe to %s", trajectoryTopic.c_str());
+      ROS_ERROR("failed to subscribe to %s", goalTopic.c_str());
     }
     else
     {
-      ROS_INFO("subscribed to %s", trajectoryTopic.c_str());
+      ROS_INFO("subscribed to %s", goalTopic.c_str());
     }
   }
 
