@@ -24,6 +24,7 @@ feedbackTopic: /tune/feedback
 commandTopic: /tune/command
 goalTopic: /move_group/goal
 tolerance: 0.02
+time: 1.0
 pid:
   p: 0.4079
   i: 0.05242

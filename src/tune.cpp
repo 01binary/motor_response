@@ -99,6 +99,9 @@ double lowerLimit;
 // The default goal position tolerance
 double defaultTolerance;
 
+// The max time to wait after starting before stopping a trajectory
+double maxTrajectoryTime;
+
 //
 // State
 //
@@ -214,6 +217,7 @@ void configure()
   ros::param::get("feedbackTopic", feedbackTopic);
   ros::param::get("joint", joint);
   ros::param::get("tolerance", defaultTolerance);
+  ros::param::get("time", maxTrajectoryTime);
 
   // Read actuator settings
   actuator.configure();
@@ -431,6 +435,19 @@ void runTrajectory(ros::Time time)
       positionError,
       position,
       goalTolerance);
+
+    endTrajectory();
+    return;
+  }
+
+  // Stop trajectory if exceeded max time
+  if (elapsed.toSec() >= maxTrajectoryTime)
+  {
+    ROS_INFO(
+      "timeout with %g within %g of %g",
+      currentPosition,
+      goalTolerance,
+      position);
 
     endTrajectory();
     return;
