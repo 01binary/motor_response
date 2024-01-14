@@ -47,8 +47,11 @@ private:
   // Input topic for listening to analog readings from absolute encoder
   std::string m_topic = "adc";
 
-  // Analog input channel
-  int m_input;
+  // Absolute input channel
+  int m_absolute;
+
+  // Relative input channel
+  int m_relative;
 
   // Analog reading min
   int m_minReading = ANALOG_MIN;
@@ -68,16 +71,19 @@ private:
 
   bool m_ready = false;
 
-  // Last filtered analog reading
+  // Last filtered absolute reading
   int m_reading = -1;
 
-  // Last position mapped from last reading
+  // Last relative count
+  int m_count = 0;
+
+  // Last position
   double m_position = std::numeric_limits<double>::infinity();
 
-  // Filter for analog input
+  // Filter for absolute position readings
   filter m_filter;
 
-  // Subscriber for receiving analog readings from motor absolute encoder
+  // Subscriber for receiving encoder readings
   ros::Subscriber m_sub;
 
 public:
@@ -91,7 +97,8 @@ public:
 
   encoder(
     const std::string& topic,
-    int input,
+    int absoluteInput,
+    int relativeInput,
     int minReading,
     int maxReading,
     double minPos,
@@ -100,7 +107,8 @@ public:
     int filterAverage)
     : m_topic(topic)
     , m_filter(filterThreshold, filterAverage)
-    , m_input(input)
+    , m_absolute(absoluteInput)
+    , m_relative(relativeInput)
     , m_minReading(minReading)
     , m_maxReading(maxReading)
     , m_minPos(minPos)
@@ -110,10 +118,16 @@ public:
   }
 
 public:
-  // Get current filtered analog reading
+  // Get current filtered absolute encoder reading
   inline int getReading() const
   {
     return m_reading;
+  }
+
+  // Get current relative encoder count
+  inline int getCount() const
+  {
+    return m_count;
   }
 
   // Get current position mapped from filtered analog reading
@@ -144,7 +158,8 @@ public:
   {
     // Read configuration settings
     ros::param::get("inputTopic", m_topic);
-    ros::param::get("input", m_input);
+    ros::param::get("absolute", m_absolute);
+    if (!ros::param::get("relative", m_relative)) m_relative = -1;
     ros::param::get("minReading", m_minReading);
     ros::param::get("maxReading", m_maxReading);
     ros::param::get("minPos", m_minPos);
@@ -166,8 +181,11 @@ public:
 
   void feedback(const motor_response::Adc::ConstPtr& msg)
   {
-    // Read analog input
-    m_reading = m_filter(msg->adc[m_input]);
+    // Read absolute encoder
+    m_reading = m_filter(msg->adc[m_absolute]);
+
+    // Read relative encoder
+    if (m_relative != -1) m_count = msg->adc[m_relative];
 
     // Re-map to position
     m_position = map(

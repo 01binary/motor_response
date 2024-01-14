@@ -10,7 +10,8 @@ minVelocity: 0.0
 maxVelocity: 1.0
 # input
 inputTopic: /adc
-input: 0
+absolute: 0
+relative: 7
 minReading: 283
 maxReading: 771
 minPos: -1.5708
