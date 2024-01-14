@@ -22,6 +22,7 @@
 #include <ros.h>                      // ROS communication
 #include <motor_response/Adc.h>       // Analog read request
 #include <motor_response/Pwm.h>       // Analog write request
+#include <QuadratureEncoder.h>        // QuadratureEncoder library
 
 /*----------------------------------------------------------*\
 | Constants
@@ -33,7 +34,7 @@ const char PWM_TOPIC[] = "pwm";
 const double RATE_HZ = 50.0;
 const int DELAY = 1000.0 / RATE_HZ;
 
-// Analog output
+// Motor PWM outputs
 const int PWM_CHANNELS = 6;
 const int PWM_PINS[] =
 {
@@ -45,7 +46,7 @@ const int PWM_PINS[] =
   10
 };
 
-// Analog input
+// Absolute encoder inputs
 const int ANALOG_CHANNELS = 7;
 const int ANALOG_PINS[] =
 {
@@ -58,6 +59,11 @@ const int ANALOG_PINS[] =
   A6
 };
 
+// Relative encoder inputs
+const int INTERRUPT_CHANNELS = 1;
+const int INTERRUPT_A = 2;
+const int INTERRUPT_B = 7;
+
 /*----------------------------------------------------------*\
 | Declarations
 \*----------------------------------------------------------*/
@@ -68,9 +74,14 @@ void writePwm(const motor_response::Pwm& msg);
 | Variables
 \*----------------------------------------------------------*/
 
+// Absolute and Relative encoder readings
+int16_t adc[ANALOG_CHANNELS + INTERRUPT_CHANNELS] = {0};
+
+// Relative encoder
+Encoders encoder(INTERRUPT_A, INTERRUPT_B);
+
 // ADC publisher
 motor_response::Adc msg;
-uint16_t adc[ANALOG_CHANNELS] = {0};
 ros::Publisher pub(ADC_TOPIC, &msg);
 
 // PWM subscriber
@@ -115,24 +126,26 @@ void setup()
 }
 
 /*----------------------------------------------------------*\
-| Analog input
+| Input
 \*----------------------------------------------------------*/
 
 void readAdc()
 {
   for (int channel = 0; channel < ANALOG_CHANNELS; channel++)
   {
-    adc[channel] = (uint16_t)analogRead(ANALOG_PINS[channel]);
+    adc[channel] = (int16_t)analogRead(ANALOG_PINS[channel]);
   }
 
-  msg.adc_length = ANALOG_CHANNELS;
+  adc[ANALOG_CHANNELS] = encoder.getEncoderCount();
+
+  msg.adc_length = ANALOG_CHANNELS + INTERRUPT_CHANNELS;
   msg.adc = adc;
     
   pub.publish(&msg);
 }
 
 /*----------------------------------------------------------*\
-| Analog output
+| Output
 \*----------------------------------------------------------*/
 
 void writePwm(const motor_response::Pwm& msg)
@@ -149,7 +162,7 @@ void writePwm(const motor_response::Pwm& msg)
 }
 
 /*----------------------------------------------------------*\
-| Message handling
+| Processing
 \*----------------------------------------------------------*/
 
 void loop()
