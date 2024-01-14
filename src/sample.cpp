@@ -238,7 +238,8 @@ void initialize(ros::NodeHandle node)
               << "LPWM" << ", "
               << "RPWM" << ", "
               << "position" << ", "
-              << "reading" << std::endl;
+              << "absolute" << ", "
+              << "relative" << std::endl;
     }
   }
 }
@@ -313,17 +314,18 @@ void record(double period)
           << actuator.getLPWM() << ", "
           << actuator.getRPWM() << ", "
           << sensor.getPosition() << ", "
-          << sensor.getReading()
-          << std::endl;
+          << sensor.getReading() << ", "
+          << sensor.getCount() << std::endl;
 
   ROS_INFO(
-    "[%d] time %#.4g\tvel %#+.4g\t\tLPWM %3d\tRPWM %3d\tpos %#.4g\treading %4d",
+    "[%d] time %#.4g\tvel %#+.4g\t\tLPWM %3d\tRPWM %3d\tpos %#.4g\tabs %4d\trel %5d",
     int(currentStep + 1),
     period,
     actuator.getVelocity(),
     actuator.getLPWM(),
     actuator.getRPWM(),
     sensor.getPosition(),
-    sensor.getReading()
+    sensor.getReading(),
+    sensor.getCount()
   );
 }
