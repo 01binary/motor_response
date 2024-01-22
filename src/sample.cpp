@@ -30,6 +30,7 @@
 #include <iostream>
 #include <fstream>
 #include <wordexp.h>
+#include <errno.h>
 
 //
 // ROS
@@ -229,7 +230,7 @@ void initialize(ros::NodeHandle node)
 
     if (!logFile.is_open())
     {
-      ROS_ERROR("Failed to open log file %s", outputLog.c_str());
+      ROS_ERROR("Failed to open log file %s: %s", outputLog.c_str(), strerror(errno));
       exit(1);
     }
     else

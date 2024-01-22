@@ -152,11 +152,12 @@ public:
   
   void command(double velocity)
   {
-    m_velocity = clampZero(abs(velocity), m_minVelocity, m_maxVelocity);
+    double absVelocity = clampZero(abs(velocity), m_minVelocity, m_maxVelocity);
 
     uint16_t dutyCycle = (uint16_t)mapZero(
-      m_velocity, m_minVelocity, m_maxVelocity, (double)m_minPwm, (double)m_maxPwm);
+      absVelocity, m_minVelocity, m_maxVelocity, (double)m_minPwm, (double)m_maxPwm);
 
+    m_velocity = velocity;
     m_lpwmCommand = (velocity >= 0 ? 0 : dutyCycle);
     m_rpwmCommand = (velocity >= 0 ? dutyCycle : 0);
 

@@ -4,7 +4,7 @@ trajectoryTopic: /move_group/goal
 outputTopic: /pwm
 lpwm: 1
 rpwm: 0
-minPwm: 64
+minPwm: 80
 maxPwm: 255
 minVelocity: 0.0
 maxVelocity: 1.0
