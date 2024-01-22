@@ -60,9 +60,9 @@ const int ANALOG_PINS[] =
 };
 
 // Relative encoder inputs
-const int INTERRUPT_CHANNELS = 1;
-const int INTERRUPT_A = 2;
-const int INTERRUPT_B = 7;
+const int QUADRATURE_CHANNELS = 1;
+const int QUADRATURE_A = 2;
+const int QUADRATURE_B = 7;
 
 /*----------------------------------------------------------*\
 | Declarations
@@ -75,10 +75,10 @@ void writePwm(const motor_response::Pwm& msg);
 \*----------------------------------------------------------*/
 
 // Absolute and Relative encoder readings
-int16_t adc[ANALOG_CHANNELS + INTERRUPT_CHANNELS] = {0};
+int16_t adc[ANALOG_CHANNELS + QUADRATURE_CHANNELS] = {0};
 
 // Relative encoder
-Encoders encoder(INTERRUPT_A, INTERRUPT_B);
+Encoders encoder(QUADRATURE_A, QUADRATURE_B);
 
 // ADC publisher
 motor_response::Adc msg;
@@ -138,7 +138,7 @@ void readAdc()
 
   adc[ANALOG_CHANNELS] = encoder.getEncoderCount();
 
-  msg.adc_length = ANALOG_CHANNELS + INTERRUPT_CHANNELS;
+  msg.adc_length = ANALOG_CHANNELS + QUADRATURE_CHANNELS;
   msg.adc = adc;
     
   pub.publish(&msg);
