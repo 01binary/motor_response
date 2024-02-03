@@ -242,7 +242,9 @@ void initialize(ros::NodeHandle node)
               << "RPWM" << ", "
               << "position" << ", "
               << "absolute" << ", "
-              << "relative" << std::endl;
+              << "relative" << ", "
+              << "reldelta" << ", "
+              << "absdelta" << std::endl;
     }
   }
 }
@@ -278,7 +280,8 @@ void control(const control_msgs::FollowJointTrajectoryActionGoal::ConstPtr& msg)
   auto trajectory = msg->goal.trajectory;
 
   // Find the joint index we are listening for
-  auto jointPos = std::find(trajectory.joint_names.cbegin(), trajectory.joint_names.cend(), joint);
+  auto jointPos = std::find(
+    trajectory.joint_names.cbegin(), trajectory.joint_names.cend(), joint);
 
   if (jointPos != trajectory.joint_names.cend())
   {
@@ -312,13 +315,21 @@ void record(double period)
 {
   if (!outputLog.size()) return;
 
+  static double prevPos;
+  static int prevCount;
+
+  double absoluteDelta = sensor.getPosition() - prevPos;
+  int relativeDelta = sensor.getCount() - prevCount;
+
   logFile << period << ", "
           << actuator.getVelocity() << ", "
           << actuator.getLPWM() << ", "
           << actuator.getRPWM() << ", "
           << sensor.getPosition() << ", "
           << sensor.getReading() << ", "
-          << sensor.getCount() << std::endl;
+          << sensor.getCount() << ", "
+          << relativeDelta << ", "
+          << absoluteDelta << std::endl;
 
   ROS_INFO(
     "[%d] time %#.4g\tvel %#+.4g\t\tLPWM %3d\tRPWM %3d\tpos %#.4g\tabs %4d\trel %5d",
@@ -331,4 +342,7 @@ void record(double period)
     sensor.getReading(),
     sensor.getCount()
   );
+
+  prevPos = sensor.getPosition();
+  prevCount = sensor.getCount();
 }
